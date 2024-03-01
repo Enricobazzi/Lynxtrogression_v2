@@ -1,0 +1,8 @@
+# ds_store
+**/.DS_Store
+
+# notebooks checkpoints
+**/.ipynb_checkpoints/
+
+# pycache
+__pycache__/
