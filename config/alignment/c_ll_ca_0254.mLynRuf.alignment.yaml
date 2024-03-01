@@ -1,8 +1,8 @@
 sample_name: c_ll_ca_0254
 fastq_id: 'HY5WLDSXX_1_286UDI-idt-UMI HY5WLDSXX_2_286UDI-idt-UMI HY5WLDSXX_3_286UDI-idt-UMI HY5WLDSXX_4_286UDI-idt-UMI'
-fastq_r1: 'HY5WLDSXX_1_286UDI-idt-UMI_1.fastq.gz HY5WLDSXX_2_286UDI-idt-UMI_1.fastq.gz HY5WLDSXX_3_286UDI-idt-UMI_1.fastq.gz HY5WLDSXX_4_286UDI-idt-UMI_1.fastq.gz'
-fastq_r2: 'HY5WLDSXX_1_286UDI-idt-UMI_2.fastq.gz HY5WLDSXX_2_286UDI-idt-UMI_2.fastq.gz HY5WLDSXX_3_286UDI-idt-UMI_2.fastq.gz HY5WLDSXX_4_286UDI-idt-UMI_2.fastq.gz'
-in_fastq_folder: /mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/FASTQ_files/LYNX_21/FASTQ
+fastq_r1: 'HY5WLDSXX_1_286UDI-idt-UMI_1.fastp.fastq.gz HY5WLDSXX_2_286UDI-idt-UMI_1.fastp.fastq.gz HY5WLDSXX_3_286UDI-idt-UMI_1.fastp.fastq.gz HY5WLDSXX_4_286UDI-idt-UMI_1.fastp.fastq.gz'
+fastq_r2: 'HY5WLDSXX_1_286UDI-idt-UMI_2.fastp.fastq.gz HY5WLDSXX_2_286UDI-idt-UMI_2.fastp.fastq.gz HY5WLDSXX_3_286UDI-idt-UMI_2.fastp.fastq.gz HY5WLDSXX_4_286UDI-idt-UMI_2.fastp.fastq.gz'
+in_fastq_folder: /mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/FASTQ_files/LYNX_21/FASTQ/fastp
 reference_genome: /mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/reference_genomes/lynx_rufus_mLynRuf2.2/mLynRuf2.2.revcomp.scaffolds.fa
 out_bam_folder: /mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_bams
 threads: 20
