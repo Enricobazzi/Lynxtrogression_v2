@@ -26,7 +26,7 @@ r2_fastq=${3}
 if [[ ${r1_fastq} == *.fastq.gz ]]; then
     r1_fastp=${r1_fastq/.fastq.gz/.fastp.fastq.gz}
     r2_fastp=${r2_fastq/.fastq.gz/.fastp.fastq.gz}
-else if [[ ${r1_fastq} == *.fq.gz ]]; then
+elif [[ ${r1_fastq} == *.fq.gz ]]; then
     r1_fastp=${r1_fastq/.fq.gz/.fastp.fastq.gz}
     r2_fastp=${r2_fastq/.fq.gz/.fastp.fastq.gz}
 else
