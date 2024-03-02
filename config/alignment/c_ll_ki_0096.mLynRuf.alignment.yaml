@@ -1,0 +1,13 @@
+sample_name: c_ll_ki_0096
+fastq_id: 'C5RRAACXX_6_9nf C5TMDACXX_8_9nf'
+fastq_r1: 'C5RRAACXX_6_9nf_1.fastp.fastq.gz C5TMDACXX_8_9nf_1.fastp.fastq.gz'
+fastq_r2: 'C5RRAACXX_6_9nf_2.fastp.fastq.gz C5TMDACXX_8_9nf_2.fastp.fastq.gz'
+in_fastq_folder: /mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/FASTQ_files/LYNX_06_08/fastp
+reference_genome: /mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/reference_genomes/lynx_rufus_mLynRuf2.2/mLynRuf2.2.revcomp.scaffolds.fa
+out_bam_folder: /mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_bams
+threads: 20
+alignment_name: mLynRuf_ref
+bwa: bwa
+samtools: samtools
+picard: 'java -jar /opt/cesga/2020/software/Core/picard/2.25.5/picard.jar'
+gatk: 'java -jar /opt/cesga/2020/software/Core/gatk/3.7-0-gcfedb67/GenomeAnalysisTK.jar'
