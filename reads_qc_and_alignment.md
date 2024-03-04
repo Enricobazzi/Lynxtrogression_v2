@@ -39,13 +39,6 @@ Some samples were already trimmed with fastp. These are the samples from the new
 
 I align the my samples to the [*Lynx rufus* reference genome](https://denovo.cnag.cat/lynx_rufus).
 
-```
-bwa index mLynRuf2.2.revcomp.scaffolds.fa
-samtools faidx mLynRuf2.2.revcomp.scaffolds.fa
-samtools dict mLynRuf2.2.revcomp.scaffolds.fa -o mLynRuf2.2.revcomp.scaffolds.dict
-```
-
-
 A script will be run for each sample that will use [bwa v0.7.17](https://bio-bwa.sourceforge.net/bwa.shtml), [samtools v1.9](https://www.htslib.org/doc/samtools.html), [picard v2.25.5](https://broadinstitute.github.io/picard/) and [gatk v3.7-0](https://gatk.broadinstitute.org/hc/en-us) that will do the following:
 - Align each of the sample's R1-R2 fastq pairs to the reference genome using BWA-MEM and Samtools view
 - samtools sort to sort the reads in the bam file
@@ -57,4 +50,19 @@ A script will be run for each sample that will use [bwa v0.7.17](https://bio-bwa
     - gatk IndelRealigner to realign the indels
 - samtools index to index the indel realigned bam for downstream analyses
 
+To prepare the reference genome of the alignment pipeline I run the following bwa and samtools commands:
+```
+bwa index mLynRuf2.2.revcomp.scaffolds.fa
+samtools faidx mLynRuf2.2.revcomp.scaffolds.fa
+samtools dict mLynRuf2.2.revcomp.scaffolds.fa -o mLynRuf2.2.revcomp.scaffolds.dict
+```
+
 The script [sbatch_alignment_of_sample_from_yaml](src/alignment/sbatch_alignment_of_sample_from_yaml.sh) will perform these steps for a particular sample,taking the information from a yaml file which is passed as first positional argument. Yaml files of each sample can be found in the [config/alignment](config/alignment/) folder.
+```
+for yaml in $(ls config/alignment/); do
+
+    echo $yaml
+    sbatch src/alignment/sbatch_alignment_of_sample_from_yaml.sh config/alignment/$yaml
+
+done
+```
