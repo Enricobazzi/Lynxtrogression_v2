@@ -66,3 +66,28 @@ for yaml in $(ls config/alignment/); do
 
 done
 ```
+
+### Alignment Quality Control
+
+To check on the quality of alignments I run [QualiMap v2.2.1](http://qualimap.conesalab.org/) ([Okonechnikov et al. 2016](https://doi.org/10.1093/bioinformatics/btv566)) using the [run_qualimap_bam_out](src/alignment/run_qualimap_bam_out.sh) script.
+```
+# bam folder
+bam_folder=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_bams
+
+# sbatch QualiMap of all samples I want to check out
+bams=$(ls ${bam_folder}/*er.bam | grep -E "ll_ca|lp_sm|ll_ya|ll_vl|ll_ki|ll_ur" | grep -vE "ca_0249|ca_0253")
+
+for bam in ${bams[@]} ; do
+
+    echo "sbatch qualimap of ${bam}"
+    sbatch src/alignment/run_qualimap_bam_out.sh \
+    ${bam} data/qualimap
+
+done
+```
+
+Then I can summarize the results using [multiqc](https://multiqc.info/) ([Ewels et al. (2016)](https://academic.oup.com/bioinformatics/article/32/19/3047/2196507)).
+```
+cd data/qualimap
+multiqc .
+```
