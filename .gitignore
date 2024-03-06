@@ -9,3 +9,6 @@ __pycache__/
 
 # excel crap
 ~$samples_table.xlsx
+
+# multiqc_data folder
+data/qualimap/multiqc_data/
