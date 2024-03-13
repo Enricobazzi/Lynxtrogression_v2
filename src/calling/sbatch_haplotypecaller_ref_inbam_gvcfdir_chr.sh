@@ -1,8 +1,6 @@
 #!/bin/bash
-#SBATCH --time=00-06:00:00
+#SBATCH --time=00-03:00:00
 #SBATCH --mem=60G
-#SBATCH --output=logs/calling/gvcf-%j.out
-#SBATCH --error=logs/calling/gvcf-%j.err
 #SBATCH --cpus-per-task=24
 
 # Purpose: call gvcf files for a bam file using HaplotypeCaller
@@ -56,6 +54,7 @@ for k in {1..8}; do
         -I ${inbam} \
         -L ${bed} \
         -O ${out} \
+        -ERC GVCF \
         --native-pair-hmm-threads 3 &
 done
 

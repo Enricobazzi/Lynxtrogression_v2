@@ -43,17 +43,32 @@ chromosomes=($(cat ${ref_dir}/autosomic_scaffolds_list.txt))
 gvcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_gvcfs
 
 # to 73!
-for i in {10..14}; do
+for i in {0..4}; do
     inbam=${inbams[${i}]}
     sample=$(basename -a ${inbam} | cut -d'_' -f1,2,3,4)
 
     for chr in ${chromosomes[*]}; do
         echo "call $chr of $sample"
-        sbatch src/calling/sbatch_haplotypecaller_ref_inbam_gvcfdir_chr.sh \
+        sbatch \
+            --output=logs/calling/gvcf.${sample}.${chr}.out \
+            --error=logs/calling/gvcf.${sample}.${chr}.err \
+            src/calling/sbatch_haplotypecaller_ref_inbam_gvcfdir_chr.sh \
             ${ref} \
             ${inbam} \
             ${gvcf_dir} \
             ${chr}
     done
 done
+
+# find failed runs:
+
+for err in $(ls logs/calling/gvcf.*.err); do
+    ndone=$(grep "HaplotypeCaller done" ${err} | wc -l)
+    if [ "${ndone}" -lt 8 ]; then
+        echo "${err} has ${ndone}"
+    fi
+done
+
+# failed runs:
+
 ```
