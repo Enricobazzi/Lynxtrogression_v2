@@ -36,3 +36,16 @@ I align the sequencing reads to the newly generated *Lynx rufus* reference genom
 ### Variant Calling from aligned reads
 
 Genotypes of all the samples were extracted from the individual alignments and joint into a unique VCF file as described in [variant_calling](variant_calling.md)
+
+### Variant Filtering
+
+The variants contained in the VCF file were filtered following these criteria:
+
+  1. Variants from repetitive and low complexity regions
+  2. Indels and non-biallelic variants
+  3. Substitutions from reference species (non variant SNPs with AF=1)
+  4. Variant quality filters, as GATK standard practices
+  5. Depth $$
+  6. Missing Data $$
+  
+I describe these steps in [variant_filtering](variant_filtering.md)
