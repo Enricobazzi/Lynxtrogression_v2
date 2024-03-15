@@ -43,7 +43,7 @@ chromosomes=($(cat ${ref_dir}/autosomic_scaffolds_list.txt))
 gvcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_gvcfs
 
 # to 73!
-for i in {10..14}; do
+for i in {40..44}; do
     inbam=${inbams[${i}]}
     sample=$(basename -a ${inbam} | cut -d'_' -f1,2,3,4)
 
