@@ -36,6 +36,7 @@ fi
 
 # create the fastp directory if it does not exist
 mkdir -p ${fastq_dir}/fastp
+chmod g+w ${fastq_dir}/fastp
 
 # run fastp
 fastp \
