@@ -55,7 +55,7 @@ inbams=($(cat data/bamlists/lp_ll_introgression.bamlist))
 for bam in ${inbams[*]}; do
     echo "calculating depth of $bam"
     sbatch src/variant_filtering/sbatch_mosdepth_10k_bam_outdir.sh \
-        ${bam}
+        ${bam} \
         data/variant_filtering/depth
 done
 ```
