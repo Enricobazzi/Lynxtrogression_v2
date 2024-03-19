@@ -42,8 +42,8 @@ inbams=($(cat data/bamlists/lp_ll_introgression.bamlist))
 chromosomes=($(cat ${ref_dir}/autosomic_scaffolds_list.txt))
 gvcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_gvcfs
 
-# to 73!
-for i in {40..44}; do
+# from 0 to 72!
+for i in {70..72}; do
     inbam=${inbams[${i}]}
     sample=$(basename -a ${inbam} | cut -d'_' -f1,2,3,4)
 
@@ -61,15 +61,39 @@ for i in {40..44}; do
     done
 done
 
-# find failed runs:
-
+# find any failed runs:
 for err in $(ls logs/calling/gvcf.*.err); do
     ndone=$(grep "HaplotypeCaller done" ${err} | wc -l)
     if [ "${ndone}" -lt 8 ]; then
         echo "${err} has ${ndone}"
     fi
 done
+```
 
-# failed runs:
+To merge each sample's gvcf into one:
+```
+gvcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_gvcfs
+samples=($(cat data/sample.list))
+for sample in ${samples[*]}; do
+    echo "$sample"
+    sbatch \
+        --job-name=${sample}.mergegvcfs \
+        --output=logs/calling/mergegvcfs.${sample}.out \
+        --error=logs/calling/mergegvcfs.${sample}.err \
+        src/calling/sbatch_mergevcfs_sample_gvcfdir.sh \
+        ${sample} \
+        ${gvcf_dir}
+done
+```
 
+And to combine all of the gvcfs into one the [sbatch_combine_gvcfs](src/calling/sbatch_combine_gvcf.sh) script is run, which does the following:
+```
+ref=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/reference_genomes/lynx_rufus_mLynRuf2.2/mLynRuf2.2.revcomp.scaffolds.fa
+gvcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_gvcfs
+gvcfs=($(ls ${gvcf_dir}/*.wholegenome.g.vcf.gz))
+out_gvcf=${gvcf_dir}/lynxtrogression_v2.g.vcf.gz
+gatk CombineGVCFs \
+    -R ${ref} \
+    $(for gvcf in ${gvcfs[@]}; do echo "--variant ${gvcf}"; done) \
+    -O ${out_gvcf}
 ```
