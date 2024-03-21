@@ -34,7 +34,9 @@ for chr in $(cat ${ref_dir}/autosomic_scaffolds_list.txt); do
 done
 ```
 
-Calling of each chromosome of each sample was sbatched to the ft3 queue as follows:
+Calling of each chromosome of each sample was performed using the [sbatch_haplotypecaller_ref_inbam_gvcfdir_chr](src/calling/sbatch_haplotypecaller_ref_inbam_gvcfdir_chr.sh) script, where variants found in the 8 sub-chromosome windows are called in parallel.
+
+This was sbatched to the ft3 queue as follows:
 ```
 ref_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/reference_genomes/lynx_rufus_mLynRuf2.2
 ref=${ref_dir}/mLynRuf2.2.revcomp.scaffolds.fa
@@ -69,6 +71,60 @@ for err in $(ls logs/calling/gvcf.*.err); do
     fi
 done
 ```
+
+A gvcf of each chromosome of each sample is generated using the [sbatch_mergevcfs_sample_gvcfdir_chrlist](src/calling/sbatch_mergevcfs_sample_gvcfdir_chrlist.sh) script by merging each sub-chromosome window gvcf.
+
+This was sbatched to the ft3 queue as follows:
+```
+ref_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/reference_genomes/lynx_rufus_mLynRuf2.2
+ref=${ref_dir}/mLynRuf2.2.revcomp.scaffolds.fa
+samples=($(cat data/sample.list))
+gvcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_gvcfs
+chr_list=${ref_dir}/autosomic_scaffolds_list.txt
+
+for sample in ${samples[*]}; do
+    echo "sbatch sbatch_mergevcfs_sample_gvcfdir_chrlist of $sample"
+    sbatch \
+        --job-name=${sample}.mergegvcfs \
+        --output=logs/calling/mergegvcfs.${sample}.out \
+        --error=logs/calling/mergegvcfs.${sample}.err \
+        src/calling/sbatch_mergevcfs_sample_gvcfdir_chrlist.sh \
+        ${sample} \
+        ${gvcf_dir} \
+        ${chr_list}
+done
+
+# to eliminate the sub-chromosome windows gvcfs when completed:
+for sample in ${samples[*]}; do for chr in $(cat $chr_list); do rm ${gvcf_dir}/${sample}.${chr}.*.g.vcf; done; done
+```
+
+Then a gvcf for each chromosome containing all samples of the project is created for each chromosome using the [sbatch_combinegvcfs_gvcflist_ref_outgvcf](src/calling/sbatch_combinegvcfs_gvcflist_ref_outgvcf.sh) script.
+
+This was sbatched to the ft3 queue as follows:
+```
+ref_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/reference_genomes/lynx_rufus_mLynRuf2.2
+ref=${ref_dir}/mLynRuf2.2.revcomp.scaffolds.fa
+samples=($(cat data/sample.list))
+gvcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_gvcfs
+chr_list=${ref_dir}/autosomic_scaffolds_list.txt
+
+for chr in $(cat ${chr_list}); do
+    ls ${gvcf_dir}/*.${chr}.g.vcf > tmp.${chr}.gvcf.list
+    outgvcf=${gvcf_dir}/lynxtrogression_v2.${chr}.g.gvcf
+    echo "sbatch sbatch_combinegvcfs_gvcflist_ref_outgvcf ${outgvcf}"
+    sbatch \
+        --job-name=${chr}.combinegvcfs \
+        --output=logs/calling/combinegvcfs.${chr}.out \
+        --error=logs/calling/combinegvcfs.${chr}.err \
+        src/calling/sbatch_combinegvcfs_gvcflist_ref_outgvcf.sh \
+        tmp.${chr}.gvcf.list \
+        ${ref} \
+        ${outgvcf}
+done
+```
+
+
+----- caca
 
 To merge each sample's gvcf into one:
 ```
