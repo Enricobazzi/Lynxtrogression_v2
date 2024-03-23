@@ -110,7 +110,7 @@ chr_list=${ref_dir}/autosomic_scaffolds_list.txt
 
 for chr in $(cat ${chr_list}); do
     ls ${gvcf_dir}/*.${chr}.g.vcf > tmp.${chr}.gvcf.list
-    outgvcf=${gvcf_dir}/lynxtrogression_v2.${chr}.g.gvcf
+    outgvcf=${gvcf_dir}/lynxtrogression_v2.${chr}.g.vcf
     echo "sbatch sbatch_combinegvcfs_gvcflist_ref_outgvcf ${outgvcf}"
     sbatch \
         --job-name=${chr}.combinegvcfs \
@@ -121,35 +121,32 @@ for chr in $(cat ${chr_list}); do
         ${ref} \
         ${outgvcf}
 done
+
+# when finished clean tmp files
+rm tmp.mLynRuf2.2_Chr*.list
 ```
 
+To generate vcf files from the gvcfs I run the [sbatch_genotypegvcfs_ref_ingvcf_outvcf](src/calling/sbatch_genotypegvcfs_ref_ingvcf_outvcf.sh) script.
 
------ caca
-
-To merge each sample's gvcf into one:
+This was sbatched to the ft3 queue as follows:
 ```
+ref_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/reference_genomes/lynx_rufus_mLynRuf2.2
+ref=${ref_dir}/mLynRuf2.2.revcomp.scaffolds.fa
+chr_list=${ref_dir}/autosomic_scaffolds_list.txt
 gvcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_gvcfs
-samples=($(cat data/sample.list))
-for sample in ${samples[*]}; do
-    echo "$sample"
+vcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
+
+for chr in $(cat ${chr_list}); do
+    ingvcf=${gvcf_dir}/lynxtrogression_v2.${chr}.g.vcf
+    outvcf=${vcf_dir}/lynxtrogression_v2.${chr}.vcf
+    echo "sbatch genotypegvcf ${ingvcf}"
     sbatch \
-        --job-name=${sample}.mergegvcfs \
-        --output=logs/calling/mergegvcfs.${sample}.out \
-        --error=logs/calling/mergegvcfs.${sample}.err \
-        src/calling/sbatch_mergevcfs_sample_gvcfdir.sh \
-        ${sample} \
-        ${gvcf_dir}
+        --job-name=${chr}.genotypegvcfs \
+        --output=logs/calling/genotypegvcfs.${chr}.out \
+        --error=logs/calling/genotypegvcfs.${chr}.err \
+        src/calling/sbatch_genotypegvcfs_ref_ingvcf_outvcf.sh \
+        ${ref} \
+        ${ingvcf} \
+        ${outvcf}
 done
-```
-
-And to combine all of the gvcfs into one the [sbatch_combine_gvcfs](src/calling/sbatch_combine_gvcf.sh) script is run, which does the following:
-```
-ref=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/reference_genomes/lynx_rufus_mLynRuf2.2/mLynRuf2.2.revcomp.scaffolds.fa
-gvcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_gvcfs
-gvcfs=($(ls ${gvcf_dir}/*.wholegenome.g.vcf.gz))
-out_gvcf=${gvcf_dir}/lynxtrogression_v2.g.vcf.gz
-gatk CombineGVCFs \
-    -R ${ref} \
-    $(for gvcf in ${gvcfs[@]}; do echo "--variant ${gvcf}"; done) \
-    -O ${out_gvcf}
 ```
