@@ -126,7 +126,7 @@ done
 rm tmp.mLynRuf2.2_Chr*.list
 ```
 
-To generate vcf files from the gvcfs I run the [sbatch_genotypegvcfs_ref_ingvcf_outvcf](src/calling/sbatch_genotypegvcfs_ref_ingvcf_outvcf.sh) script.
+To generate vcf files from the chromosome gvcfs I run the [sbatch_genotypegvcfs_ref_ingvcf_outvcf](src/calling/sbatch_genotypegvcfs_ref_ingvcf_outvcf.sh) script.
 
 This was sbatched to the ft3 queue as follows:
 ```
@@ -149,4 +149,14 @@ for chr in $(cat ${chr_list}); do
         ${ingvcf} \
         ${outvcf}
 done
+```
+
+Finally to create a vcf with all the chromosomes of all samples I run the [sbatch_bcftoolsconcat_vcflist_outvcf](src/calling/sbatch_bcftoolsconcat_vcflist_outvcf.sh) script.
+
+This was sbatched to the ft3 queue as follows:
+```
+vcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
+ls ${vcf_dir}/lynxtrogression_v2.*.vcf > tmp.vcf.list
+vcflist=tmp.vcf.list
+outvcf=${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.vcf.gz
 ```
