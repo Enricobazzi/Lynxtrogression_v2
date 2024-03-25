@@ -9,6 +9,8 @@ The variants contained in the VCF file were filtered following these criteria:
   5. Depth $$
   6. Missing Data $$
 
+----
+
 ### Find repetitive and low complexity regions
 
 To identify repeats and low complexity regions of the genome we used both [RepeatModeler](https://www.repeatmasker.org/RepeatModeler/) and [RepeatMasker](https://www.repeatmasker.org/RepeatMasker/).
@@ -25,7 +27,7 @@ sbatch \
     --error=logs/variant_filtering/repeatmasker.err \
     src/variant_filtering/mask_repeats.sh ${ref}
 ```
-s
+
 This command generates the file `mLynRuf2.2.revcomp.scaffolds.fa.out.gff` which contains coordinates for low complexity regions.
 
 To join the repeats with the low complexity regions:
@@ -43,6 +45,33 @@ To calculate the length of these regions I run:
 `awk '{sum+=$3-$2} END {print sum}' ${ref_dir}/repeats_lowcomplexity_regions.bed`
 
 The result is 1_037_211_281, which is ~43% of the total genome (2_420_127_838).
+
+----
+
+### Applying filters 1 to 4
+
+To apply the filters 1 to 4 I use the [apply_filters_1to4_invcf_ref_maskbed](src/variant_filtering/apply_filters_1to4_invcf_ref_maskbed.sh) script. This script applies a combination of [bedtools](https://bedtools.readthedocs.io/en/latest/), [gatk](https://gatk.broadinstitute.org/hc/en-us) and [bcftools](https://samtools.github.io/bcftools/bcftools.html) to remove:
+
+  1. Variants from repetitive and low complexity regions
+  2. Indels and non-biallelic variants
+  3. Substitutions from reference species (non variant SNPs with AF=1)
+  4. Variant quality filters, as GATK standard practices
+
+```
+vcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
+invcf=${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.vcf.gz
+ref_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/reference_genomes/lynx_rufus_mLynRuf2.2
+ref=${ref_dir}/mLynRuf2.2.revcomp.scaffolds.fa
+maskbed=${ref_dir}/repeats_lowcomplexity_regions.bed
+
+sbatch \
+    --job-name=filter1to4 \
+    --output=logs/variant_filtering/filter1to4.out \
+    --error=logs/variant_filtering/filter1to4.err \
+    src/variant_filtering/apply_filters_1to4_invcf_ref_maskbed.sh \
+    ${invcf} ${ref} ${maskbed}
+```
+----
 
 ### Calculate read depth per 10k bp window
 
