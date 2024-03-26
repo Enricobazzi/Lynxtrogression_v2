@@ -73,7 +73,46 @@ sbatch \
 ```
 ----
 
-### Calculate read depth per 10k bp window
+### Divide the VCF by population
+
+The next filters are applied based on population so I will divide the filter4 vcf file into four population vcfs: `lpa`, `wel`, `eel` and `sel`.
+
+I use gatk to do it:
+
+```
+ref_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/reference_genomes/lynx_rufus_mLynRuf2.2
+ref=${ref_dir}/mLynRuf2.2.revcomp.scaffolds.fa
+vcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
+invcf=${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.vcf
+
+for pop in lpa wel eel sel; do
+    if [ ${pop} == "lpa" ]; then
+        samples=($(grep "lp_sm" data/sample.list))
+    elif [ ${pop} == "wel" ]; then
+        samples=($(grep -E "ll_ki|ll_ur" data/sample.list))
+    elif [ ${pop} == "eel" ]; then
+        samples=($(grep -E "ll_ya|ll_vl" data/sample.list))
+    elif [ ${pop} == "sel" ]; then
+        samples=($(grep -E "ll_ca" data/sample.list))
+    fi
+    echo "-- creating vcf of ${pop} --"
+    gatk SelectVariants \
+        -R ${ref} \
+        -V ${invcf} \
+        $(for sample in ${samples[@]}; do echo "-sn ${sample}";done) \
+        -O ${invcf/.vcf/.${pop}_pop.vcf}
+done
+```
+
+----
+
+### Calculate missing data filters per population
+
+To filter out excessively missing variants in each population I calculate missing data separately for each population.
+
+----
+
+### Calculate read depth filters in 10k bp window
 
 To avoid including in the analysis possible paralogs whose SNP profiles do not reflect real genetic diversity we eliminate genomic regions where an excess of sequencing reads align to the reference genome.
 
@@ -88,3 +127,35 @@ for bam in ${inbams[*]}; do
         data/variant_filtering/depth
 done
 ```
+
+From these results, we can calculate if a particular window should be filtered or not for a population using the [make_rdfilter_beds](src/variant_filtering/make_rdfilter_beds.py) scripts. Windows whose the sum of depth values for the population exceeds 1.5 times the mode of values are marked as failed for that population in the [regions_depth_filtering.tsv](data/variant_filtering/depth/regions_depth_filtering.tsv) table. The script also outputs one bed file for each population containing the coordinates for the windows that do not pass the filter, prints the following summary:
+```
+sel fail: 1050
+wel fail: 873
+eel fail: 1006
+lpa fail: 1202
+all fail: 714
+lpa fail and others pass: 275
+```
+and these plots:
+
+<head>
+    <style>
+        td, img {
+            padding: 0;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <table style="border-collapse: collapse; border-spacing: 0;">
+        <tr>
+            <td><img src="data/variant_filtering/depth/lpa_depth_distribution.png" alt="lpa_depth_distribution" style="width: 75%;" /></td>
+            <td><img src="data/variant_filtering/depth/wel_depth_distribution.png" alt="wel_depth_distribution" style="width: 75%;" /></td>
+        </tr>
+        <tr>
+            <td><img src="data/variant_filtering/depth/eel_depth_distribution.png" alt="eel_depth_distribution" style="width: 75%;" /></td>
+            <td><img src="data/variant_filtering/depth/sel_depth_distribution.png" alt="sel_depth_distribution" style="width: 75%;" /></td>
+        </tr>
+    </table>
+</body>

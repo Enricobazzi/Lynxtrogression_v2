@@ -12,3 +12,6 @@ __pycache__/
 
 # multiqc_data folder
 data/qualimap/multiqc_data/
+
+# depth data (too big)
+data/variant_filtering/depth/*.regions.bed
