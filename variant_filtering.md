@@ -141,11 +141,9 @@ and these plots:
 
 <table>
     <tr>
-        <td><img src="data/variant_filtering/depth/lpa_depth_distribution.png" alt="lpa_depth_distribution" style="width: 75%;" /></td>
-        <td><img src="data/variant_filtering/depth/wel_depth_distribution.png" alt="wel_depth_distribution" style="width: 75%;" /></td>
-    </tr>
-    <tr>
-        <td><img src="data/variant_filtering/depth/eel_depth_distribution.png" alt="eel_depth_distribution" style="width: 75%;" /></td>
-        <td><img src="data/variant_filtering/depth/sel_depth_distribution.png" alt="sel_depth_distribution" style="width: 75%;" /></td>
+        <td><img src="data/variant_filtering/depth/lpa_depth_distribution.png" alt="lpa_depth_distribution" style="width: 90%;" /></td>
+        <td><img src="data/variant_filtering/depth/wel_depth_distribution.png" alt="wel_depth_distribution" style="width: 90%;" /></td>
+        <td><img src="data/variant_filtering/depth/eel_depth_distribution.png" alt="eel_depth_distribution" style="width: 90%;" /></td>
+        <td><img src="data/variant_filtering/depth/sel_depth_distribution.png" alt="sel_depth_distribution" style="width: 90%;" /></td>
     </tr>
 </table>
