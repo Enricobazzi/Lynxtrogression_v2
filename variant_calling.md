@@ -159,4 +159,9 @@ vcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLy
 ls ${vcf_dir}/lynxtrogression_v2.*.vcf > tmp.vcf.list
 vcflist=tmp.vcf.list
 outvcf=${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.vcf.gz
+
+sbatch src/calling/sbatch_bcftoolsconcat_vcflist_outvcf.sh \
+    ${vcflist} ${outvcf}
+
+rm tmp.vcf.list
 ```
