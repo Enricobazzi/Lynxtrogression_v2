@@ -139,23 +139,13 @@ lpa fail and others pass: 275
 ```
 and these plots:
 
-<head>
-    <style>
-        td, img {
-            padding: 0;
-            margin: 0;
-        }
-    </style>
-</head>
-<body>
-    <table style="border-collapse: collapse; border-spacing: 0;">
-        <tr>
-            <td><img src="data/variant_filtering/depth/lpa_depth_distribution.png" alt="lpa_depth_distribution" style="width: 75%;" /></td>
-            <td><img src="data/variant_filtering/depth/wel_depth_distribution.png" alt="wel_depth_distribution" style="width: 75%;" /></td>
-        </tr>
-        <tr>
-            <td><img src="data/variant_filtering/depth/eel_depth_distribution.png" alt="eel_depth_distribution" style="width: 75%;" /></td>
-            <td><img src="data/variant_filtering/depth/sel_depth_distribution.png" alt="sel_depth_distribution" style="width: 75%;" /></td>
-        </tr>
-    </table>
-</body>
+<table>
+    <tr>
+        <td><img src="data/variant_filtering/depth/lpa_depth_distribution.png" alt="lpa_depth_distribution" style="width: 75%;" /></td>
+        <td><img src="data/variant_filtering/depth/wel_depth_distribution.png" alt="wel_depth_distribution" style="width: 75%;" /></td>
+    </tr>
+    <tr>
+        <td><img src="data/variant_filtering/depth/eel_depth_distribution.png" alt="eel_depth_distribution" style="width: 75%;" /></td>
+        <td><img src="data/variant_filtering/depth/sel_depth_distribution.png" alt="sel_depth_distribution" style="width: 75%;" /></td>
+    </tr>
+</table>
