@@ -108,7 +108,30 @@ done
 
 ### Calculate missing data filters per population
 
-To filter out excessively missing variants in each population I calculate missing data separately for each population.
+To filter out excessively missing variants in each population I calculate missing data separately in each vcf.
+
+The number of missing genotype is calculated for each SNP in the population vcfs by comparing the number of samples to the number of genotyped allels (AN = third field of the INFO column) as follows:
+```
+vcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
+for pop in lpa wel eel sel; do
+    if [ ${pop} == "lpa" ]; then
+        nsamples=$(grep "lp_sm" data/sample.list | wc -l)
+    elif [ ${pop} == "wel" ]; then
+        nsamples=$(grep -E "ll_ki|ll_ur" data/sample.list | wc -l)
+    elif [ ${pop} == "eel" ]; then
+        nsamples=$(grep -E "ll_ya|ll_vl" data/sample.list | wc -l)
+    elif [ ${pop} == "sel" ]; then
+        nsamples=$(grep -E "ll_ca" data/sample.list | wc -l)
+    fi
+    echo "-- calculating missing genotypes of ${pop} : N=${nsamples} --"
+    vcf=${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.${pop}_pop.vcf
+    paste <(grep -v "#" ${vcf} | cut -f1,2) \
+        <(grep -v "#" $vcf | cut -f8 | cut -d';' -f3 | cut -d'=' -f2 | awk -v nsam="${nsamples}" '{print ((nsam*2)-$1)/2}') | 
+        awk '{print $1, $2-1, $2, $3}' | tr ' ' '\t' \
+        > data/variant_filtering/missing/${pop}.nmiss.bed
+done
+```
+
 
 ----
 

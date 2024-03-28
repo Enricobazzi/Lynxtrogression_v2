@@ -15,6 +15,8 @@ data/qualimap/multiqc_data/
 
 # depth data (too big)
 data/variant_filtering/depth/*.regions.bed
+data/variant_filtering/depth/*.rd_filter.bed
 
 # missing data (too big)
 data/variant_filtering/missing/*.nmiss.bed
+data/variant_filtering/missing/*.miss_filter.bed
