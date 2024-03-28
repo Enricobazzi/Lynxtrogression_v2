@@ -22,7 +22,6 @@ for bed in bed_list:
     vc['Freq_prop'] = vc['count'] / len(bed)
     vc['Freq_cumsum'] = vc['Freq_prop'].cumsum()
     vc_list.append(vc)
-print(vc_list[0].head())
 
 # plot the cumulative frequency of missing genotypes
 plt.figure(figsize=(8, 6))
