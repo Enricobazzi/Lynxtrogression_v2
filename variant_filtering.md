@@ -57,6 +57,8 @@ To apply the filters 1 to 4 I use the [apply_filters_1to4_invcf_ref_maskbed](src
   3. Substitutions from reference species (non variant SNPs with AF=1)
   4. Variant quality filters, as GATK standard practices
 
+As the only variation from [GATK standard practices](https://gatk.broadinstitute.org/hc/en-us/articles/360035890471-Hard-filtering-germline-short-variants) regarding hard-quality filters, I'm going to filter out any variant with a QD < 6 instead of the reccomened 2, as I noticed (by *a posteriori* investigating individual variants) low quality unreliable variants would not be filtered out.
+
 ```
 vcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
 invcf=${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.vcf.gz
@@ -71,6 +73,32 @@ sbatch \
     src/variant_filtering/apply_filters_1to4_invcf_ref_maskbed.sh \
     ${invcf} ${ref} ${maskbed}
 ```
+
+To count the number of variants left at each step:
+```
+vcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
+
+# starting vars:
+zgrep -v "#" ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.vcf.gz | wc -l
+# 33660503
+
+# after removing repetitive and low complexity regions:
+grep -v "#" ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter1.vcf | wc -l
+# 16708960
+
+# after removing indels and non-biallelic variants:
+grep -v "#" ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter2.vcf | wc -l
+# 13196733
+
+# after removing substitutions from reference species:
+grep -v "#" ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter3.vcf | wc -l
+# 7131855
+
+# after removing variants based on quality:
+grep -v "#" ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.vcf | wc -l
+# 6937652 = 0.9727696371 of SNPs remain after this step
+```
+
 ----
 
 ### Divide the VCF by population
@@ -132,6 +160,16 @@ for pop in lpa wel eel sel; do
 done
 ```
 
+From these bed files I can calculate if a particular SNP should be filtered out or not for a population using the [make_missfilter_beds](src/variant_filtering/make_missfilter_beds.py) script. SNPs with a number of missing genotypes that exceeds the 20% of samples of a particular population are selected for removal and their coordinates are stored in a bed file for each population. Additionally the scripts prints the following summary:
+```
+sel: 66331 SNPs have more than 20% (>3 samples) missing genotypes (99.044% of total SNPs)
+eel: 180494 SNPs have more than 20% (>4 samples) missing genotypes (97.398% of total SNPs)
+lpa: 164083 SNPs have more than 20% (>5 samples) missing genotypes (97.635% of total SNPs)
+wel: 185354 SNPs have more than 20% (>5 samples) missing genotypes (97.328% of total SNPs)
+```
+and draws this plot:
+
+![missplot](data/variant_filtering/missing/missing_cumsum.png)
 
 ----
 
@@ -151,7 +189,7 @@ for bam in ${inbams[*]}; do
 done
 ```
 
-From these results, we can calculate if a particular window should be filtered or not for a population using the [make_rdfilter_beds](src/variant_filtering/make_rdfilter_beds.py) scripts. Windows whose the sum of depth values for the population exceeds 1.5 times the mode of values are marked as failed for that population in the [regions_depth_filtering.tsv](data/variant_filtering/depth/regions_depth_filtering.tsv) table. The script also outputs one bed file for each population containing the coordinates for the windows that do not pass the filter, prints the following summary:
+From these results, I can calculate if a particular window should be filtered or not for a population using the [make_rdfilter_beds](src/variant_filtering/make_rdfilter_beds.py) scripts. Windows whose the sum of depth values for the population exceeds 1.5 times the mode of values are marked as failed for that population in the [regions_depth_filtering.tsv](data/variant_filtering/depth/regions_depth_filtering.tsv) table. The script also outputs one bed file for each population containing the coordinates for the windows that do not pass the filter, prints the following summary:
 ```
 sel fail: 1050
 wel fail: 873
@@ -170,3 +208,56 @@ and these plots:
         <td><img src="data/variant_filtering/depth/sel_depth_distribution.png" alt="sel_depth_distribution" style="width: 90%;" /></td>
     </tr>
 </table>
+
+### Create Population-Pair vcfs and apply population filters
+
+My analyses will be run on vcfs that include samples of Iberian lynx (lpa) paired with samples from one of the Eurasian lynx populations (wel, eel, sel). This means a total of 3 distinct vcfs of the three population pairs: `lpa-wel`, `lpa-eel` and `lpa-sel`. To generate these vcfs from the vcf with all of the samples I use gatk:
+```
+ref_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/reference_genomes/lynx_rufus_mLynRuf2.2
+ref=${ref_dir}/mLynRuf2.2.revcomp.scaffolds.fa
+vcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
+invcf=${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.vcf
+
+for pop in wel eel sel; do
+    if [ ${pop} == "wel" ]; then
+        samples=($(grep -E "lp_sm|ll_ki|ll_ur" data/sample.list))
+    elif [ ${pop} == "eel" ]; then
+        samples=($(grep -E "lp_sm|ll_ya|ll_vl" data/sample.list))
+    elif [ ${pop} == "sel" ]; then
+        samples=($(grep -E "lp_sm|ll_ca" data/sample.list))
+    fi
+    echo "-- creating vcf of lpa-${pop} --"
+    gatk SelectVariants \
+        -R ${ref} \
+        -V ${invcf} \
+        $(for sample in ${samples[@]}; do echo "-sn ${sample}";done) \
+        -O ${invcf/.vcf/.lpa-${pop}_pair.vcf}
+done
+```
+
+To remove high depth windows and high missing SNPs from these vcfs I use bedtools:
+```
+vcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
+
+for pop in wel eel sel; do
+    # apply the filter based on missingness
+    echo "filtering lpa-${pop} vcf removing SNPs with an excess of missing data"
+    bedtools subtract -header \
+        -a ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}_pair.vcf \
+        -b data/variant_filtering/missing/lpa.miss_filter.bed |
+    bedtools subtract -header \
+        -a stdin \
+        -b data/variant_filtering/missing/${pop}.miss_filter.bed \
+    > ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}_pair.miss_fil.vcf
+
+    # apply the filter based on read depth
+    echo "filtering lpa-${pop} vcf removing windows with an excess of read depth"
+    bedtools subtract -header \
+        -a ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}_pair.miss_fil.vcf \
+        -b data/variant_filtering/depth/lpa.rd_filter.bed |
+    bedtools subtract -header \
+        -a stdin \
+        -b data/variant_filtering/depth/${pop}.rd_filter.bed \
+    > ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}_pair.miss_fil.rd_fil.vcf
+done
+```

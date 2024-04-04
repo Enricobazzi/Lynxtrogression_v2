@@ -32,5 +32,5 @@ gatk SelectVariants \
 bcftools view -e 'INFO/AF=1.00' ${outvcf}.filter2.vcf > ${outvcf}.filter3.vcf
 
 # apply filter 4: remove low quality variants (as defined by GATK)
-bcftools view -e 'INFO/MQRankSum < -12.5 | INFO/ReadPosRankSum < -8.0 | QUAL < 30 | INFO/QD < 2.0 | INFO/FS > 60.0 | INFO/MQ < 40.0' \
+bcftools view -e 'INFO/MQRankSum < -12.5 | INFO/ReadPosRankSum < -8.0 | INFO/QD < 6.0 | INFO/FS > 60.0 | INFO/MQ < 40.0' \
     ${outvcf}.filter3.vcf > ${outvcf}.filter4.vcf
