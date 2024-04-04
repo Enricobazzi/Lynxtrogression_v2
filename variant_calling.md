@@ -98,7 +98,9 @@ done
 for sample in ${samples[*]}; do for chr in $(cat $chr_list); do rm ${gvcf_dir}/${sample}.${chr}.*.g.vcf; done; done
 ```
 
-Then a gvcf for each chromosome containing all samples of the project is created for each chromosome using the [sbatch_combinegvcfs_gvcflist_ref_outgvcf](src/calling/sbatch_combinegvcfs_gvcflist_ref_outgvcf.sh) script.
+Then a gvcf for each chromosome containing all samples of the project is created for each chromosome using the [sbatch_combinegvcfs_gvcflist_ref_outgvcf](src/calling/sbatch_combinegvcfs_gvcflist_ref_outgvcf.sh) script. 
+
+*Note:* This should be replaced by [GenomicsDBImport](https://gatk.broadinstitute.org/hc/en-us/articles/360057439331-GenomicsDBImport) for better performance (see [here](https://gatk.broadinstitute.org/hc/en-us/articles/360035535932-Germline-short-variant-discovery-SNPs-Indels))
 
 This was sbatched to the ft3 queue as follows:
 ```
