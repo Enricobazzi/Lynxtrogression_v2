@@ -36,7 +36,7 @@ ref_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/reference_genomes/lynx_ru
 
 cat <(grep -v "#" ${ref_dir}/Repeats.4jb.gff3 | awk -F'\t' '{OFS="\t"; print $1, $4-1, $5}') \
     <(grep -v "#" ${ref_dir}/repeatmasker/mLynRuf2.2.revcomp.scaffolds.fa.out.gff | awk -F'\t' '{OFS="\t"; print $1, $4-1, $5}') |
-    sort -k 1,1 -k2,2n -k3,3n |
+    sort -k1,1 -k2,2n -k3,3n |
     bedtools merge -i - \
     > ${ref_dir}/repeats_lowcomplexity_regions.bed
 ```
@@ -96,7 +96,7 @@ grep -v "#" ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter3.vcf | wc -
 
 # after removing variants based on quality:
 grep -v "#" ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.vcf | wc -l
-# 6937652 = 0.9727696371 of SNPs remain after this step
+# 6495225 = 0.910734304 of SNPs remain after this step
 ```
 
 ----
@@ -138,40 +138,60 @@ done
 
 To filter out excessively missing variants in each population I calculate missing data separately in each vcf.
 
-The number of missing genotype is calculated for each SNP in the population vcfs by comparing the number of samples to the number of genotyped allels (AN = third field of the INFO column) as follows:
+I use `bcftools filter` to generate BED files which contain the SNPs that would be excluded with different thresholds of maximum proportion of missing data (from 0.05 to 0.25 in 0.05 increments).
+
+I also output a table to easily plot the results in R and a summary of the filtering:
+
 ```
 vcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
+
+# total number of SNPs is the same in each population
+n_tot=$(grep -v "#" ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.vcf | wc -l)
+
+# create a table for plotting
+echo "population n_tot f_miss n_filter" > data/variant_filtering/missing/miss_table.txt
+
 for pop in lpa wel eel sel; do
-    if [ ${pop} == "lpa" ]; then
-        nsamples=$(grep "lp_sm" data/sample.list | wc -l)
-    elif [ ${pop} == "wel" ]; then
-        nsamples=$(grep -E "ll_ki|ll_ur" data/sample.list | wc -l)
-    elif [ ${pop} == "eel" ]; then
-        nsamples=$(grep -E "ll_ya|ll_vl" data/sample.list | wc -l)
-    elif [ ${pop} == "sel" ]; then
-        nsamples=$(grep -E "ll_ca" data/sample.list | wc -l)
-    fi
-    echo "-- calculating missing genotypes of ${pop} : N=${nsamples} --"
     vcf=${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.${pop}_pop.vcf
-    paste <(grep -v "#" ${vcf} | cut -f1,2) \
-        <(grep -v "#" $vcf | cut -f8 | cut -d';' -f3 | cut -d'=' -f2 | awk -v nsam="${nsamples}" '{print ((nsam*2)-$1)/2}') | 
-        awk '{print $1, $2-1, $2, $3}' | tr ' ' '\t' \
-        > data/variant_filtering/missing/${pop}.nmiss.bed
+    # work with different proportions of missing data
+    for f_miss in 0.05 0.1 0.15 0.2 0.25; do
+        echo "extracting SNPs in ${pop} with F_MISSING > ${f_miss}"
+
+        ## to extract the bed files:
+        # change f_miss string for better file name
+        f_miss_x=$(echo $f_miss | tr '.' '_')
+        # extract bed of SNPs with more missing data than proportion defined by f_miss
+        bcftools filter -i "F_MISSING > ${f_miss}" ${vcf} | grep -v "#" | awk '{print $1, $2-1, $2}' \
+            > data/variant_filtering/missing/${pop}.f_miss.${f_miss_x}.bed
+        
+        ## to fill the table for plotting:
+        # count the number of SNPs that have more missing data than proportion
+        nfilter=$(cat data/variant_filtering/missing/${pop}.f_miss.${f_miss_x}.bed | wc -l)
+        # add a row to table for plotting
+        echo "${pop} ${n_tot} ${f_miss} ${nfilter}" >> data/variant_filtering/missing/miss_table.txt
+        
+        ## to print a summary:
+        if [ ${pop} == "lpa" ]; then
+            nsamples=$(grep "lp_sm" data/sample.list | wc -l)
+        elif [ ${pop} == "wel" ]; then
+            nsamples=$(grep -E "ll_ki|ll_ur" data/sample.list | wc -l)
+        elif [ ${pop} == "eel" ]; then
+            nsamples=$(grep -E "ll_ya|ll_vl" data/sample.list | wc -l)
+        elif [ ${pop} == "sel" ]; then
+            nsamples=$(grep -E "ll_ca" data/sample.list | wc -l)
+        fi
+        n_miss=$(echo "${nsamples} * ${f_miss}" | bc -l)
+        pleft=$(echo "${nfilter} / ${n_tot} * 100" | bc -l | cut -c1-5)
+        echo "${pop}: ${nfilter} SNPs have a proportion of missing genotypes greater than ${f_miss} (>${n_miss} samples) = ${pleft}% of total SNPs filtered"
+    done
 done
 ```
 
-From these bed files I can calculate if a particular SNP should be filtered out or not for a population using the [make_missfilter_beds](src/variant_filtering/make_missfilter_beds.py) script. SNPs with a number of missing genotypes that exceeds the 20% of samples of a particular population are selected for removal and their coordinates are stored in a bed file for each population. Additionally the scripts prints the following summary:
-```
-sel: 66331 SNPs have more than 20% (>3 samples) missing genotypes (99.044% of total SNPs)
-eel: 180494 SNPs have more than 20% (>4 samples) missing genotypes (97.398% of total SNPs)
-lpa: 164083 SNPs have more than 20% (>5 samples) missing genotypes (97.635% of total SNPs)
-wel: 185354 SNPs have more than 20% (>5 samples) missing genotypes (97.328% of total SNPs)
-```
-and draws this plot:
+I decide to use a 15% maximum missing data threshold so all populatons have > 95% SNPs left while still filtering excessively missing variants.
 
-![missplot](data/variant_filtering/missing/missing_cumsum.png)
+Draw the plot with [draw_miss_plot.R](src/variant_filtering/draw_miss_plot.R). 
 
-----
+![missplot](data/variant_filtering/missing/missing_plot.png)
 
 ### Calculate read depth filters in 10k bp window
 
@@ -259,5 +279,18 @@ for pop in wel eel sel; do
         -a stdin \
         -b data/variant_filtering/depth/${pop}.rd_filter.bed \
     > ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}_pair.miss_fil.rd_fil.vcf
+done
+```
+
+Finally I can remove non-variant SNPs from individual population pair vcfs (variants from other populations)
+
+```
+vcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
+
+for pop in wel eel sel; do
+    echo "removing non-variant SNPs from lpa-${pop} population pair"
+    grep -vE "AC=0;AF=0.00;|;AF=1.00;" \
+        ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}_pair.miss_fil.rd_fil.vcf \
+    > ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}_pair.miss_fil.rd_fil.variant.vcf
 done
 ```
