@@ -193,6 +193,48 @@ Draw the plot with [draw_miss_plot.R](src/variant_filtering/draw_miss_plot.R).
 
 ![missplot](data/variant_filtering/missing/missing_plot.png)
 
+extracting SNPs in lpa with F_MISSING > 0.05
+lpa: 692764 SNPs have a proportion of missing genotypes greater than 0.05 (>1.10 samples) = 10.66% of total SNPs filtered
+extracting SNPs in lpa with F_MISSING > 0.1
+lpa: 373831 SNPs have a proportion of missing genotypes greater than 0.1 (>2.2 samples) = 5.755% of total SNPs filtered
+extracting SNPs in lpa with F_MISSING > 0.15
+lpa: 254833 SNPs have a proportion of missing genotypes greater than 0.15 (>3.30 samples) = 3.923% of total SNPs filtered
+extracting SNPs in lpa with F_MISSING > 0.2
+lpa: 194002 SNPs have a proportion of missing genotypes greater than 0.2 (>4.4 samples) = 2.986% of total SNPs filtered
+extracting SNPs in lpa with F_MISSING > 0.25
+lpa: 154852 SNPs have a proportion of missing genotypes greater than 0.25 (>5.50 samples) = 2.384% of total SNPs filtered
+extracting SNPs in wel with F_MISSING > 0.05
+wel: 643120 SNPs have a proportion of missing genotypes greater than 0.05 (>1.00 samples) = 9.901% of total SNPs filtered
+extracting SNPs in wel with F_MISSING > 0.1
+wel: 373869 SNPs have a proportion of missing genotypes greater than 0.1 (>2.0 samples) = 5.756% of total SNPs filtered
+extracting SNPs in wel with F_MISSING > 0.15
+wel: 271336 SNPs have a proportion of missing genotypes greater than 0.15 (>3.00 samples) = 4.177% of total SNPs filtered
+extracting SNPs in wel with F_MISSING > 0.2
+wel: 214448 SNPs have a proportion of missing genotypes greater than 0.2 (>4.0 samples) = 3.301% of total SNPs filtered
+extracting SNPs in wel with F_MISSING > 0.25
+wel: 174580 SNPs have a proportion of missing genotypes greater than 0.25 (>5.00 samples) = 2.687% of total SNPs filtered
+extracting SNPs in eel with F_MISSING > 0.05
+eel: 961080 SNPs have a proportion of missing genotypes greater than 0.05 (>.95 samples) = 14.79% of total SNPs filtered
+extracting SNPs in eel with F_MISSING > 0.1
+eel: 395312 SNPs have a proportion of missing genotypes greater than 0.1 (>1.9 samples) = 6.086% of total SNPs filtered
+extracting SNPs in eel with F_MISSING > 0.15
+eel: 272059 SNPs have a proportion of missing genotypes greater than 0.15 (>2.85 samples) = 4.188% of total SNPs filtered
+extracting SNPs in eel with F_MISSING > 0.2
+eel: 210438 SNPs have a proportion of missing genotypes greater than 0.2 (>3.8 samples) = 3.239% of total SNPs filtered
+extracting SNPs in eel with F_MISSING > 0.25
+eel: 168092 SNPs have a proportion of missing genotypes greater than 0.25 (>4.75 samples) = 2.587% of total SNPs filtered
+extracting SNPs in sel with F_MISSING > 0.05
+sel: 209452 SNPs have a proportion of missing genotypes greater than 0.05 (>.60 samples) = 3.224% of total SNPs filtered
+extracting SNPs in sel with F_MISSING > 0.1
+sel: 119043 SNPs have a proportion of missing genotypes greater than 0.1 (>1.2 samples) = 1.832% of total SNPs filtered
+extracting SNPs in sel with F_MISSING > 0.15
+sel: 119043 SNPs have a proportion of missing genotypes greater than 0.15 (>1.80 samples) = 1.832% of total SNPs filtered
+extracting SNPs in sel with F_MISSING > 0.2
+sel: 85411 SNPs have a proportion of missing genotypes greater than 0.2 (>2.4 samples) = 1.314% of total SNPs filtered
+extracting SNPs in sel with F_MISSING > 0.25
+sel: 63572 SNPs have a proportion of missing genotypes greater than 0.25 (>3.00 samples) = .9787% of total SNPs filtered
+
+
 ### Calculate read depth filters in 10k bp window
 
 To avoid including in the analysis possible paralogs whose SNP profiles do not reflect real genetic diversity we eliminate genomic regions where an excess of sequencing reads align to the reference genome.
