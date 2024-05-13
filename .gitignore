@@ -24,3 +24,4 @@ data/variant_filtering/missing/*.miss_filter.bed
 # testing notebook
 tester.ipynb
 tester.Rmd
+.Rproj.user
