@@ -17,7 +17,7 @@ miss_plot <- ggplot(miss_table) +
             aes(x = f_miss, y = percent_out), size = 0.5, color = "grey") +
   geom_point(data = miss_table, 
              aes(x = f_miss, y = percent_out, fill = population),
-             shape = 21, size = 2.5) +
+             shape = 21, size = 1.5) +
   theme(panel.grid.major.y = element_line(color = "black", size = 0.25, linetype = 2)) +
   scale_y_continuous(n.breaks = 12) +
   xlab(paste0("Maximum proportion of missing genotypes")) +
