@@ -6,8 +6,8 @@ The variants contained in the VCF file were filtered following these criteria:
   2. Indels and non-biallelic variants
   3. Substitutions from reference species (non variant SNPs with AF=1)
   4. Variant quality filters, as GATK standard practices
-  5. Depth $$
-  6. Missing Data $$
+  6. Variants with excessive missing data
+  7. Variants falling in regions with excessive read depth (possible paralogs)
 
 ----
 
