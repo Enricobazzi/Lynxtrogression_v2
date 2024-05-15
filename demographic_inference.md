@@ -2,8 +2,9 @@
 
 I will be using [GADMA2](https://github.com/ctlab/GADMA) (see [Noskova et al. 2023](https://academic.oup.com/gigascience/article/doi/10.1093/gigascience/giad059/7248629)) to reconstruct the demographic history of the Iberian and Eurasian lynx population pairs.
 
+----
 
-### Prepare the Dataset - Remove genes & Prune SNPs
+### Prepare the Dataset - Remove genes
 
 I will use neutral regions of the genome and independent SNPs for more solid reconstruction of the neutral demographic history
 
@@ -31,7 +32,9 @@ for pair in lpa-wel lpa-eel lpa-sel; do
 done
 ```
 
-### Prune SNPs
+----
+
+### Prepare the Dataset - Prune SNPs
 
 I prune the SNPs using `vcftools`, keeping SNPs with no missing data and at a distance of at least 50kb between eachother:
 ```
@@ -49,11 +52,14 @@ done
 ```
 
 This leaves the following amount of SNPs in each population pair (info in data/demographic_inference/ logs):
-- lpa-wel: 31628 out of 2735580
-- lpa-eel: 31885 out of 3004621
-- lpa-sel: 31882 out of 2732135
+```
+# lpa-wel: 31628 out of 2735580
+# lpa-eel: 31885 out of 3004621
+# lpa-sel: 31882 out of 2732135
+```
+----
 
-### Calculate Observed Genome Length
+### Prepare the Dataset - Calculate Observed Genome Length
 
 To calculate the amount of observed genome I need to subtract from the autosome length all of the regions I removed during filtering (low complexity and repetitive, high depth, genes) and also keep a proportion of sites equal to the proportion of SNPs I kept when filtering out SNPs (low quality, missing, pruned).
 
@@ -76,10 +82,13 @@ for pop in wel eel sel; do
     cat data/demographic_inference/lpa-${pop}.callable.bed | awk '{sum += $3 - $2} END {print sum}'
 done
 ```
+
 So the total genomic region observed is:
-* lpa-wel: 735474363
-* lpa-eel: 735395197
-* lpa-sel: 735147869
+```
+# lpa-wel: 735474363
+# lpa-eel: 735395197
+# lpa-sel: 735147869
+```
 
 From these regions I take away a proportion of SNPs for low quality, a proportion for missing data and a proportion for pruning:
 ```
@@ -115,9 +124,13 @@ done
 ```
 
 The total number of observed sites in each population pair is:
-* lpa-wel: 735474363 * 0.910734304048526 * 0.9419167157411791 * 0.011561716345345412 = 7294475.137109491
-* lpa-eel: 735395197 * 0.910734304048526 * 0.9412921030449292 * 0.01061198733550754 = 6690115.6057525985
-* lpa-sel: 735147869 * 0.910734304048526 * 0.9543172099503866 * 0.011669262316832806 = 7455942.606560742
+```
+# lpa-wel: 735474363 * 0.910734304048526 * 0.9419167157411791 * 0.011561716345345412 = 7294475.137109491
+# lpa-eel: 735395197 * 0.910734304048526 * 0.9412921030449292 * 0.01061198733550754 = 6690115.6057525985
+# lpa-sel: 735147869 * 0.910734304048526 * 0.9543172099503866 * 0.011669262316832806 = 7455942.606560742
+```
+
+----
 
 ### Run GADMA2
 
