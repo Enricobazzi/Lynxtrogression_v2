@@ -55,6 +55,69 @@ This leaves the following amount of SNPs in each population pair (info in data/d
 
 ### Calculate Observed Genome Length
 
+To calculate the amount of observed genome I need to subtract from the autosome length all of the regions I removed during filtering (low complexity and repetitive, high depth, genes) and also keep a proportion of sites equal to the proportion of SNPs I kept when filtering out SNPs (low quality, missing, pruned).
+
+To calculate these:
+```
+ref_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/reference_genomes/lynx_rufus_mLynRuf2.2
+
+for pop in wel eel sel; do
+    echo "lpa-${pop}:"
+    bedtools subtract \
+        -a <(grep -i "chr" ${ref_dir}/mLynRuf2.2.revcomp.scaffolds.fa.fai | grep -viE "chry|chrx" | awk '{print $1, 0, $2}' | tr ' ' '\t') \
+        -b ${ref_dir}/repeats_lowcomplexity_regions.bed |
+    bedtools subtract \
+        -a stdin \
+        -b ${ref_dir}/genes.bed |
+    bedtools subtract \
+        -a stdin \
+        -b <(bedtools merge -i <(cat data/variant_filtering/depth/lpa.rd_filter.bed data/variant_filtering/depth/${pop}.rd_filter.bed | sort -k1,1 -k2,2n)) \
+    > data/demographic_inference/lpa-${pop}.callable.bed
+    cat data/demographic_inference/lpa-${pop}.callable.bed | awk '{sum += $3 - $2} END {print sum}'
+done
+```
+So the total genomic region observed is:
+* lpa-wel: 735474363
+* lpa-eel: 735395197
+* lpa-sel: 735147869
+
+From these regions I take away a proportion of SNPs for low quality, a proportion for missing data and a proportion for pruning:
+```
+vcf_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
+
+# proportion of low quality variants: 6495225 / 7131855 = 0.910734304048526
+grep -v "#" ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter3.vcf | wc -l
+# 7131855
+grep -v "#" ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.vcf | wc -l
+# 6495225
+
+# proportion of highly missing variants in each pop-pair
+# lpa-wel: 6117961 / 6495225 = 0.9419167157411791
+# lpa-eel: 6113904 / 6495225 = 0.9412921030449292
+# lpa-sel: 6198505 / 6495225 = 0.9543172099503866
+
+for pair in lpa-wel lpa-eel lpa-sel; do
+    echo "lpa-${pop}:"
+    grep -v "#" ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.${pair}_pair.vcf | wc -l
+    grep -v "#" ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.${pair}_pair.miss_fil.vcf | wc -l
+done
+
+# proportion of pruned SNPs
+# lpa-wel: 31628 / 2735580 = 0.011561716345345412
+# lpa-eel: 31885 / 3004621 = 0.01061198733550754
+# lpa-sel: 31882 / 2732135 = 0.011669262316832806
+
+for pair in lpa-wel lpa-eel lpa-sel; do
+    echo "lpa-${pop}:"
+    grep -v "#" ${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.${pair}_pair.miss_fil.rd_fil.variant.nogenes.vcf | wc -l
+    grep -v "#" data/demographic_inference/${pair}.pruned.recode.vcf | wc -l
+done
+```
+
+The total number of observed sites in each population pair is:
+* lpa-wel: 735474363 * 0.910734304048526 * 0.9419167157411791 * 0.011561716345345412 = 7294475.137109491
+* lpa-eel: 735395197 * 0.910734304048526 * 0.9412921030449292 * 0.01061198733550754 = 6690115.6057525985
+* lpa-sel: 735147869 * 0.910734304048526 * 0.9543172099503866 * 0.011669262316832806 = 7455942.606560742
 
 ### Run GADMA2
 
