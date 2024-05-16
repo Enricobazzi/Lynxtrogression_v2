@@ -132,8 +132,9 @@ The total number of observed sites in each population pair is:
 
 ----
 
-### Run GADMA2
+### Installing GADMA2
 
+I create a conda environment for easier GADMA installation. As dependecies are tricky with the installation, I found the following to work:
 ```
 cd /mnt/netapp1/Store_CSIC/home/csic/eye/eba # $STORE
 
@@ -150,4 +151,29 @@ pip uninstall ruamel.yaml
 pip install "ruamel.yaml<0.18.0"
 pip uninstall matplotlib
 pip install "matplotlib<3.5"
+```
+
+where `pip install -i https://test.pypi.org/simple/ gadma` installs a development version of GADMA where `Lower bound of first split` can be defined. This is ideal with my data, two populations of two distinct species, where the time intervals for within-population events can be very small, but the divergence time might be very high.
+
+I can activate this environment by running the following:
+```
+module load cesga/system miniconda3/22.11.1-1 && source activate /mnt/netapp1/Store_CSIC/home/csic/eye/eba/gadma2
+```
+
+### Preps
+
+To run GADMA I need 3 things:
+- vcf file
+- popmap file
+- parameter file
+
+Run gadma:
+```
+pair=lpa-wel
+for n in {1..50}; do
+    sbatch --job-name=${n}_gadma_${pair} \
+        --output=logs/demographic_inference/${pair}.gadma.${n}.out \
+        --error=logs/demographic_inference/${pair}.gadma.${n}.err \
+        src/demographic_inference/run_gadma.sh ${pair} ${n}
+done
 ```

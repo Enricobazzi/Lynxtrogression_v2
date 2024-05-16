@@ -1,0 +1,16 @@
+Input data: lpa-sel.pruned.recode.vcf,lpa-sel.popmap.txt
+Projections: [20, 20]
+Outgroup: False
+Sequence length: 7455942
+Mutation rate: 6e-9
+Initial structure: [2, 2]
+Final structure: [2, 3]
+Number of repeats: 10
+Number of processes: 10
+Split fractions: False
+Lower bound of first split: 20000
+Dynamics: Sud, Exp
+Linked SNP's: True
+Min_N: 0.001
+Max_N: 50
+Max_T: 10

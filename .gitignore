@@ -21,6 +21,13 @@ data/variant_filtering/depth/*.rd_filter.bed
 data/variant_filtering/missing/*.nmiss.bed
 data/variant_filtering/missing/*.miss_filter.bed
 
+# demographic inference data (too big)
+data/demographic_inference/lpa-*.callable.bed
+data/demographic_inference/lpa-*.recode.vcf
+data/demographic_inference/lpa-*.pruned.log
+data/demographic_inference/lpa-*.popmap.txt
+data/demographic_inference/lpa-wel_1
+
 # testing notebook
 tester.ipynb
 tester.Rmd
