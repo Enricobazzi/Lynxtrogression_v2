@@ -1,5 +1,5 @@
 Input data: lpa-eel.pruned.recode.vcf,lpa-eel.popmap.txt
-Projections: [34, 34]
+Projections: [44, 38]
 Outgroup: False
 Sequence length: 6690115
 Mutation rate: 6e-9
@@ -14,3 +14,14 @@ Linked SNP's: True
 Min_N: 0.001
 Max_N: 50
 Max_T: 10
+Pts: [50, 60, 70]
+Size_of_generation: 10
+# Fractions
+N_elitism: 3
+P_mutation: 0.2
+P_crossover: 0.3
+P_random: 0.2
+Mean_mutation_strength: 0.776
+Const_for_mutation_strength: 1.302
+Mean_mutation_rate: 0.273
+Const_for_mutation_rate: 1.475
