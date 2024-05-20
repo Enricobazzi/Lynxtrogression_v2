@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -c 10
 #SBATCH --mem=20G
-#SBATCH -t 0-06:00:00
+#SBATCH -t 3-00:00:00
 
 # load the necessary modules
 module load cesga/system miniconda3/22.11.1-1
