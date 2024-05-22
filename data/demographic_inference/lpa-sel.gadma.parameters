@@ -1,5 +1,5 @@
 Input data: lpa-sel.pruned.recode.vcf,lpa-sel.popmap.txt
-Projections: [44, 24]
+Projections: [24, 44]
 Outgroup: False
 Sequence length: 7455942
 Mutation rate: 6e-9

@@ -1,5 +1,5 @@
 Input data: lpa-eel.pruned.recode.vcf,lpa-eel.popmap.txt
-Projections: [44, 38]
+Projections: [38, 44]
 Outgroup: False
 Sequence length: 6690115
 Mutation rate: 6e-9

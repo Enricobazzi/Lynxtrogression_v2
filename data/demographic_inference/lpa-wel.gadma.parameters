@@ -1,5 +1,5 @@
 Input data: lpa-wel.pruned.recode.vcf,lpa-wel.popmap.txt
-Projections: [44, 40]
+Projections: [40, 44]
 Outgroup: False
 Sequence length: 7294475
 Mutation rate: 6e-9
