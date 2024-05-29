@@ -26,7 +26,7 @@ data/demographic_inference/lpa-*.callable.bed
 data/demographic_inference/lpa-*.recode.vcf
 data/demographic_inference/lpa-*.pruned.log
 data/demographic_inference/lpa-*.popmap.txt
-data/demographic_inference/lpa-wel_1
+data/demographic_inference/lpa-wel_*
 
 # testing notebook
 tester.ipynb
