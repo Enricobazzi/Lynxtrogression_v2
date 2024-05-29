@@ -174,6 +174,157 @@ for n in {1..50}; do
     sbatch --job-name=${n}_gadma_${pair} \
         --output=logs/demographic_inference/${pair}.gadma.${n}.out \
         --error=logs/demographic_inference/${pair}.gadma.${n}.err \
-        src/demographic_inference/run_gadma.sh ${pair} ${n}
+        src/demographic_inference/run_gadma.sh ${pair} ${n} ${pair}_${n}
 done
+```
+
+Resume the unfinished runs:
+```
+# first resumed
+pair=lpa-wel
+for n in {1..50}; do
+    ncomplete=$(grep "algor" data/demographic_inference/${pair}_${n}/GADMA.log | wc -l)
+    if [ $ncomplete -ne 10 ]; then
+        echo "RESUMING RUN ${pair}_${n}:"
+        sbatch --job-name=${n}_gadma_${pair} \
+            --output=logs/demographic_inference/${pair}.gadma.${n}.out \
+            --error=logs/demographic_inference/${pair}.gadma.${n}.err \
+            src/demographic_inference/run_gadma.sh ${pair} ${n} ${pair}_${n}
+    fi
+done
+
+pair=lpa-wel
+for n in {1..50}; do
+    if [ -d data/demographic_inference/${pair}_${n}_resumed ]; then
+    ncomplete=$(grep "algor" data/demographic_inference/${pair}_${n}_resumed/GADMA.log | wc -l)
+        if [ $ncomplete -eq 10 ]; then
+            echo "RUN ${pair}_${n}_resumed COMPLETE!"
+        fi
+    fi
+done
+
+# second resumed
+pair=lpa-wel
+for n in {1..50}; do
+    ncomplete=$(grep "algor" data/demographic_inference/${pair}_${n}_resumed/GADMA.log | wc -l)
+    if [ $ncomplete -ne 10 ]; then
+        echo "RESUMING RUN ${pair}_${n}_resumed :"
+        sbatch --job-name=${n}_gadma_${pair} \
+            --output=logs/demographic_inference/${pair}.gadma.${n}.out \
+            --error=logs/demographic_inference/${pair}.gadma.${n}.err \
+            src/demographic_inference/run_gadma.sh ${pair} ${n} ${pair}_${n}_resumed
+    fi
+done
+
+pair=lpa-wel
+for n in {1..50}; do
+    if [ -d data/demographic_inference/${pair}_${n}_resumed_resumed ]; then
+    ncomplete=$(grep "algor" data/demographic_inference/${pair}_${n}_resumed_resumed/GADMA.log | wc -l)
+        if [ $ncomplete -eq 10 ]; then
+            echo "RUN ${pair}_${n}_resumed_resumed COMPLETE!"
+        else
+            echo "RUN ${pair}_${n}_resumed_resumed: ${ncomplete} completed"
+        fi
+    fi
+done
+
+# third resumed
+pair=lpa-wel
+for n in {1..50}; do
+    ncomplete=$(grep "algor" data/demographic_inference/${pair}_${n}_resumed_resumed/GADMA.log | wc -l)
+    if [ $ncomplete -ne 10 ]; then
+        echo "RESUMING RUN ${pair}_${n}_resumed_resumed :"
+        sbatch --job-name=${n}_gadma_${pair} \
+            --output=logs/demographic_inference/${pair}.gadma.${n}.out \
+            --error=logs/demographic_inference/${pair}.gadma.${n}.err \
+            src/demographic_inference/run_gadma.sh ${pair} ${n} ${pair}_${n}_resumed_resumed
+    fi
+done
+
+pair=lpa-wel
+for n in {1..50}; do
+    if [ -d data/demographic_inference/${pair}_${n}_resumed_resumed_resumed ]; then
+    ncomplete=$(grep "algor" data/demographic_inference/${pair}_${n}_resumed_resumed/GADMA.log | wc -l)
+        if [ $ncomplete -eq 10 ]; then
+            echo "RUN ${pair}_${n}_resumed_resumed_resumed COMPLETE!"
+        else
+            echo "RUN ${pair}_${n}_resumed_resumed_resumed: ${ncomplete} completed"
+        fi
+    fi
+done
+```
+
+Get results (demes yamls and moments scripts) *explore all the resumed folders*
+```
+pair=lpa-wel
+
+# DEMES YAMLS = final_best_logLL_model_demes_code.py.yml
+for n in {1..50}; do
+    for k in {1..10}; do
+        yaml=data/demographic_inference/${pair}_${n}_resumed_resumed/${k}/final_best_logLL_model_demes_code.py.yml
+        if [ -f $yaml ]; then
+            cp $yaml data/demographic_inference/${pair}_best_yamls/${pair}_${n}_${k}_final_best_model.yaml
+        fi
+    done
+done
+# MOMENTS SCRIPTS = final_best_logLL_model_moments_code.py
+for n in {1..50}; do
+    for k in {1..10}; do
+        moms=data/demographic_inference/${pair}_${n}_resumed/${k}/final_best_logLL_model_moments_code.py
+        if [ -f $moms ]; then
+            cp $moms data/demographic_inference/${pair}_best_moments/${pair}_${n}_${k}_final_best_moments.py
+        fi
+    done
+done
+```
+
+```
+pair=lpa-wel
+# LIKELIHOOD TABLE
+echo "run log-like" > ll_table.txt
+
+for n in {1..50}; do
+    for k in {1..10}; do
+        if [ -f data/demographic_inference/${pair}_best_moments/${pair}_${n}_${k}_final_best_moments.py ]; then
+            echo "RUN ${pair}_${n}_${k}"
+            ll=$(python data/demographic_inference/${pair}_best_moments/${pair}_${n}_${k}_final_best_moments.py | grep "hood" | cut -d' ' -f6)
+            echo "${pair}_${n}_${k} ${ll}" >> ll_table.txt
+        fi
+    done
+done
+
+for n in {1..50}; do
+    for k in {1..10}; do
+        moms=data/demographic_inference/${pair}_${n}/${k}/final_best_logLL_model_moments_code.py
+        if [ -f $moms ]; then
+            ll=$(tail data/demographic_inference/${pair}_${n}/${k}/GADMA_GA.log | grep "y:" | cut -d':' -f2 | cut -d' ' -f2)
+            echo "${pair}_${n}_${k}: ${ll}"
+            echo "${pair}_${n}_${k} ${ll}" >> ll_table.txt
+        fi
+    done
+done
+
+for n in {1..50}; do
+    for k in {1..10}; do
+        moms=data/demographic_inference/${pair}_${n}_resumed/${k}/final_best_logLL_model_moments_code.py
+        if [ -f $moms ]; then
+            ll=$(tail data/demographic_inference/${pair}_${n}_resumed/${k}/GADMA_GA.log | grep "y:" | cut -d':' -f2 | cut -d' ' -f2)
+            echo "${pair}_${n}_${k}: ${ll}"
+            echo "${pair}_${n}_${k} ${ll}" >> ll_table.txt
+        fi
+    done
+done
+
+for n in {1..50}; do
+    for k in {1..10}; do
+        moms=data/demographic_inference/${pair}_${n}_resumed_resumed_resumed/${k}/final_best_logLL_model_moments_code.py
+        if [ -f $moms ]; then
+            ll=$(tail data/demographic_inference/${pair}_${n}_resumed_resumed_resumed/${k}/GADMA_GA.log | grep "y:" | cut -d':' -f2 | cut -d' ' -f2)
+            echo "${pair}_${n}_${k}: ${ll}"
+            echo "${pair}_${n}_${k} ${ll}" >> ll_table.txt
+        fi
+    done
+done
+
+sort -rnk 2 ll_table.txt | uniq > tmp && mv tmp ll_table.txt
 ```
