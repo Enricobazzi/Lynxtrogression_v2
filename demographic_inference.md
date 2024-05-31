@@ -160,12 +160,50 @@ I can activate this environment by running the following:
 module load cesga/system miniconda3/22.11.1-1 && source activate /mnt/netapp1/Store_CSIC/home/csic/eye/eba/gadma2
 ```
 
-### Preps
+### Preparations
 
-To run GADMA I need 3 things:
-- vcf file
-- popmap file
-- parameter file
+To run GADMA2 I need 3 things:
+- vcf file: I will use the pruned vcf of each population pair
+- popmap file: which assigns a population to each sample in the vcf
+- parameter file: where the gadma run specifications are stored, I have one for each population pair
+
+In the parameter file I selected the following based on the population pair:
+```
+Input data: <pop-pair.vcf>,<pop-pair.popmap>
+Projections: [<nhaplo_pop1>, <nhaplo_pop2>]
+Sequence length: <pop-pair_genome_length_after_filters>
+```
+Here pop1 and pop2 are in the order they appear in the popmap file (in my case always pop1 = Eurasian lynx and pop2 = Iberian lynx) and their projections is the number of haplotypes they have (number of individuals * 2) because while pruning I eliminated all missing data.
+
+Other parameters are the same regardless of population pair
+```
+Outgroup: False
+Mutation rate: 6e-9
+Initial structure: [2, 2]
+Final structure: [2, 3]
+Number of repeats: 10
+Number of processes: 10
+Split fractions: False
+Lower bound of first split: 20000
+Dynamics: Sud, Exp
+Linked SNP's: True
+Min_N: 0.001
+Max_N: 50
+Max_T: 10
+Pts: [50, 60, 70]
+Size_of_generation: 10
+# Fractions
+N_elitism: 3
+P_mutation: 0.2
+P_crossover: 0.3
+P_random: 0.2
+Mean_mutation_strength: 0.776
+Const_for_mutation_strength: 1.302
+Mean_mutation_rate: 0.273
+Const_for_mutation_rate: 1.475
+```
+
+### Running GADMA2 *to be completed*
 
 Run gadma:
 ```
@@ -244,7 +282,7 @@ done
 pair=lpa-wel
 for n in {1..50}; do
     if [ -d data/demographic_inference/${pair}_${n}_resumed_resumed_resumed ]; then
-    ncomplete=$(grep "algor" data/demographic_inference/${pair}_${n}_resumed_resumed/GADMA.log | wc -l)
+    ncomplete=$(grep "algor" data/demographic_inference/${pair}_${n}_resumed_resumed_resumed/GADMA.log | wc -l)
         if [ $ncomplete -eq 10 ]; then
             echo "RUN ${pair}_${n}_resumed_resumed_resumed COMPLETE!"
         else
@@ -252,6 +290,34 @@ for n in {1..50}; do
         fi
     fi
 done
+
+# fourth resumed (gave it 3 days)
+pair=lpa-wel
+for n in {1..50}; do
+    if [ -d data/demographic_inference/${pair}_${n}_resumed_resumed_resumed ]; then
+        ncomplete=$(grep "algor" data/demographic_inference/${pair}_${n}_resumed_resumed_resumed/GADMA.log | wc -l)
+        if [ $ncomplete -ne 10 ]; then
+            echo "RESUMING RUN ${pair}_${n}_resumed_resumed_resumed :"
+            sbatch --job-name=${n}_gadma_${pair} \
+                --output=logs/demographic_inference/${pair}.gadma.${n}.out \
+                --error=logs/demographic_inference/${pair}.gadma.${n}.err \
+                src/demographic_inference/run_gadma.sh ${pair} ${n} ${pair}_${n}_resumed_resumed_resumed
+        fi
+    fi
+done
+
+pair=lpa-wel
+for n in {1..50}; do
+    if [ -d data/demographic_inference/${pair}_${n}_resumed_resumed_resumed_resumed ]; then
+    ncomplete=$(grep "algor" data/demographic_inference/${pair}_${n}_resumed_resumed_resumed_resumed/GADMA.log | wc -l)
+        if [ $ncomplete -eq 10 ]; then
+            echo "RUN ${pair}_${n}_resumed_resumed_resumed_resumed COMPLETE!"
+        else
+            echo "RUN ${pair}_${n}_resumed_resumed_resumed_resumed: ${ncomplete} completed"
+        fi
+    fi
+done
+
 ```
 
 Get results (demes yamls and moments scripts) *explore all the resumed folders*
@@ -261,7 +327,7 @@ pair=lpa-wel
 # DEMES YAMLS = final_best_logLL_model_demes_code.py.yml
 for n in {1..50}; do
     for k in {1..10}; do
-        yaml=data/demographic_inference/${pair}_${n}_resumed_resumed/${k}/final_best_logLL_model_demes_code.py.yml
+        yaml=data/demographic_inference/${pair}_${n}_resumed_resumed_resumed/${k}/final_best_logLL_model_demes_code.py.yml
         if [ -f $yaml ]; then
             cp $yaml data/demographic_inference/${pair}_best_yamls/${pair}_${n}_${k}_final_best_model.yaml
         fi
@@ -270,7 +336,7 @@ done
 # MOMENTS SCRIPTS = final_best_logLL_model_moments_code.py
 for n in {1..50}; do
     for k in {1..10}; do
-        moms=data/demographic_inference/${pair}_${n}_resumed/${k}/final_best_logLL_model_moments_code.py
+        moms=data/demographic_inference/${pair}_${n}_resumed_resumed_resumed/${k}/final_best_logLL_model_moments_code.py
         if [ -f $moms ]; then
             cp $moms data/demographic_inference/${pair}_best_moments/${pair}_${n}_${k}_final_best_moments.py
         fi
@@ -285,19 +351,9 @@ echo "run log-like" > ll_table.txt
 
 for n in {1..50}; do
     for k in {1..10}; do
-        if [ -f data/demographic_inference/${pair}_best_moments/${pair}_${n}_${k}_final_best_moments.py ]; then
-            echo "RUN ${pair}_${n}_${k}"
-            ll=$(python data/demographic_inference/${pair}_best_moments/${pair}_${n}_${k}_final_best_moments.py | grep "hood" | cut -d' ' -f6)
-            echo "${pair}_${n}_${k} ${ll}" >> ll_table.txt
-        fi
-    done
-done
-
-for n in {1..50}; do
-    for k in {1..10}; do
         moms=data/demographic_inference/${pair}_${n}/${k}/final_best_logLL_model_moments_code.py
         if [ -f $moms ]; then
-            ll=$(tail data/demographic_inference/${pair}_${n}/${k}/GADMA_GA.log | grep "y:" | cut -d':' -f2 | cut -d' ' -f2)
+            ll=$(tail data/demographic_inference/${pair}_${n}/${k}/GADMA_GA.log | grep "y:" | cut -d':' -f2 | cut -d' ' -f2 | tail -1)
             echo "${pair}_${n}_${k}: ${ll}"
             echo "${pair}_${n}_${k} ${ll}" >> ll_table.txt
         fi
@@ -308,7 +364,7 @@ for n in {1..50}; do
     for k in {1..10}; do
         moms=data/demographic_inference/${pair}_${n}_resumed/${k}/final_best_logLL_model_moments_code.py
         if [ -f $moms ]; then
-            ll=$(tail data/demographic_inference/${pair}_${n}_resumed/${k}/GADMA_GA.log | grep "y:" | cut -d':' -f2 | cut -d' ' -f2)
+            ll=$(tail data/demographic_inference/${pair}_${n}_resumed/${k}/GADMA_GA.log | grep "y:" | cut -d':' -f2 | cut -d' ' -f2 | tail -1)
             echo "${pair}_${n}_${k}: ${ll}"
             echo "${pair}_${n}_${k} ${ll}" >> ll_table.txt
         fi
@@ -317,9 +373,21 @@ done
 
 for n in {1..50}; do
     for k in {1..10}; do
+        moms=data/demographic_inference/${pair}_${n}_resumed_resumed/${k}/final_best_logLL_model_moments_code.py
+        if [ -f $moms ]; then
+            ll=$(tail data/demographic_inference/${pair}_${n}_resumed_resumed/${k}/GADMA_GA.log | grep "y:" | cut -d':' -f2 | cut -d' ' -f2 | tail -1)
+            echo "${pair}_${n}_${k}: ${ll}"
+            echo "${pair}_${n}_${k} ${ll}" >> ll_table.txt
+        fi
+    done
+done
+
+
+for n in {1..50}; do
+    for k in {1..10}; do
         moms=data/demographic_inference/${pair}_${n}_resumed_resumed_resumed/${k}/final_best_logLL_model_moments_code.py
         if [ -f $moms ]; then
-            ll=$(tail data/demographic_inference/${pair}_${n}_resumed_resumed_resumed/${k}/GADMA_GA.log | grep "y:" | cut -d':' -f2 | cut -d' ' -f2)
+            ll=$(tail data/demographic_inference/${pair}_${n}_resumed_resumed_resumed/${k}/GADMA_GA.log | grep "y:" | cut -d':' -f2 | cut -d' ' -f2 | tail -1)
             echo "${pair}_${n}_${k}: ${ll}"
             echo "${pair}_${n}_${k} ${ll}" >> ll_table.txt
         fi
@@ -327,4 +395,36 @@ for n in {1..50}; do
 done
 
 sort -rnk 2 ll_table.txt | uniq > tmp && mv tmp ll_table.txt
+```
+
+### Obtaining confidence intervals from best runs *to be completed*
+
+Instructions in the [gadma manual page](https://gadma.readthedocs.io/en/latest/user_manual/confidence_intervals.html)
+
+In order to obtain confidence intervals for our results we need to bootstrap our data. The [make_bootstrap_from_gadma](src/demographic_inference/make_bootstrap_from_gadma.py) python script will do it using the information from the gadma parameter file. For each population pair I create 100 bootstrap replicates and save them in a folder called `<pair>_bootstrap`
+```
+module load cesga/system miniconda3/22.11.1-1
+source activate /mnt/netapp1/Store_CSIC/home/csic/eye/eba/gadma2
+
+for pair in lpa-wel lpa-eel lpa-sel; do
+    echo "bootstrapping ${pair}"
+    python src/demographic_inference/make_bootstrap_from_gadma.py \
+        data/demographic_inference/${pair}.gadma.parameters \
+        data/demographic_inference/${pair}_bootstrap \
+        100
+done
+```
+
+To run local search from initial and bootstrapped Frequency Spectrums I use the `gadma-run_ls_on_boot_data` gadma script in the [sbatch_ls_on_boot.sh](src/demographic_inference/sbatch_ls_on_boot.sh) custom script
+```
+pair=lpa-wel
+for run in 12_9 6_2 20_7; do
+    sbatch --job-name=${run}_CI \
+        --output=logs/demographic_inference/${pair}_${run}.CI.out \
+        --error=logs/demographic_inference/${pair}_${run}.CI.err \
+        src/demographic_inference/sbatch_ls_on_boot.sh \
+            data/demographic_inference/${pair}_bootstrap \
+            data/demographic_inference/${pair}_best_moments/${pair}_${run}_final_best_moments.py \
+            data/demographic_inference/${pair}_CI/${pair}_${run}
+done
 ```
