@@ -36,3 +36,9 @@ tester.Rmd
 .Rproj.user
 .Rhistory
 Lynxtrogression_v2.Rproj
+
+# presentation
+presentation.key
+
+# plots
+plots/
