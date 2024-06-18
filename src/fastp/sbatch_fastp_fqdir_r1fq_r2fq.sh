@@ -42,9 +42,9 @@ chmod g+w ${fastq_dir}/fastp
 fastp \
     -i ${fastq_dir}/${r1_fastq} -I ${fastq_dir}/${r2_fastq} \
     -o ${fastq_dir}/fastp/${r1_fastp} -O ${fastq_dir}/fastp/${r2_fastp} \
-    -h ${fastq_dir}/fastp/${r1_fastq/.fastq.gz/_fastp.html} -j ${fastq_dir}/fastp/${r1_fastq/.fastq.gz/_fastp.json} \
-    --unpaired1 ${fastq_dir}/fastp/${r1_fastq/.fastq.gz/_unpaired.fastq.gz} --unpaired2 ${fastq_dir}/fastp/${r2_fastq/.fastq.gz/_unpaired.fastq.gz} \
-    --failed_out ${fastq_dir}/fastp/${r1_fastq/.fastq.gz/_failed.fastq.gz} \
+    -h ${fastq_dir}/fastp/${r1_fastp/.fastq.gz/_fastp.html} -j ${fastq_dir}/fastp/${r1_fastp/.fastq.gz/_fastp.json} \
+    --unpaired1 ${fastq_dir}/fastp/${r1_fastp/.fastq.gz/_unpaired.fastq.gz} --unpaired2 ${fastq_dir}/fastp/${r2_fastp/.fastq.gz/_unpaired.fastq.gz} \
+    --failed_out ${fastq_dir}/fastp/${r1_fastp/.fastq.gz/_failed.fastq.gz} \
     --dont_overwrite \
     --trim_poly_g \
     --length_required 30 \
