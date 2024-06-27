@@ -36,7 +36,11 @@ elif graph.demes[1].name == "sel_lpa":
     positions = dict(lpa=-w/2, sel=w/2, sel_lpa=0, ancestral=0)
     ax = demesdraw.tubes(graph, log_time=True, positions=positions, labels="xticks-legend", scale_bar=True)
 
-plt.savefig(f'{args.output}/{graph.demes[1].name}_{run}_best_model.png', dpi=300)
+plt.savefig(f'{args.output}/{graph.demes[1].name}_{run}_best_model_tubes.png', dpi=300)
+plt.close()
+
+ax = demesdraw.size_history(graph, log_time=True, log_size=True)
+plt.savefig(f'{args.output}/{graph.demes[1].name}_{run}_best_model_sizes.png', dpi=300)
 plt.close()
 
 ## second part of the script: plot the parameter distributions
