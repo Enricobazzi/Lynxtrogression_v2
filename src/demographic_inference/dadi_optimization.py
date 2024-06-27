@@ -159,5 +159,8 @@ def main() -> None:
         f.write(f"{args.pop_pair},{args.model},{new_ll_model},{','.join(str(val) for val in opt_params.tolist())}\n")
     
     return
+
+## TODO: ADD THETA CALCULATION - NOW IN CONVERSION SCRIPT BUT WOULD BE MORE EFFICIENT HERE
+
 if __name__ == '__main__':
     main()
