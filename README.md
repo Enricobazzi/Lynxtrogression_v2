@@ -19,3 +19,16 @@ Genotypes of all the samples were extracted from the individual alignments and j
 ### Variant Filtering
 
 I describe the steps I take for filtering the variant dataset in [variant_filtering](variant_filtering.md)
+
+
+### Conda environment for analyses
+
+Unless specified this environment is used and created as follows:
+
+```
+conda create -n lynxtrogression_v2 python=3.9
+pip install demes
+pip uninstall ruamel.yaml
+pip install "ruamel.yaml<0.18.0"
+pip install pandas
+```
