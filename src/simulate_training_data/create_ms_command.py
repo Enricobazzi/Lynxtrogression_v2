@@ -36,7 +36,7 @@ pop2 = graph.demes[3].name
 graph.migrations = []
 
 # function to draw parameters from the confidence intervals
-def draw_param_from_confint(param):
+def draw_param_from_confint(param, confint=confint):
     return random.uniform(confint.loc[confint["parameter"] == param]["lower"].values[0],
                           confint.loc[confint["parameter"] == param]["upper"].values[0])
 
@@ -148,4 +148,4 @@ print(f'msmodified/ms {nsam} 1 -t {theta} -r {rho} {L} {demes_to_ms}')
 # os.system(f'msmodified/ms {nsam} 1 -t {theta} -r {rho} {L} {demes_to_ms}')
 
 ## TODO: need to remove populations 1 and 2 (ancestrals) and make populations 3 and 4 as 1 and 2.
-# Try from the demes graph first
+# Try from the demes graph first - DO I THOUGH? EH? DO I?
