@@ -35,6 +35,11 @@ data/demographic_inference/lpa-wel_*
 tester.ipynb
 tester.Rmd
 
+minitest/
+fastas/
+fake_fastas/
+data/introgression_scans/lpa-wel_vcf_fastas/
+
 # R stuff
 .Rproj.user
 .Rhistory
@@ -48,3 +53,9 @@ plots/
 
 # shit
 shit/
+
+# file extensions:
+*.npz
+*.weights
+*.vcf
+*.hdf5
