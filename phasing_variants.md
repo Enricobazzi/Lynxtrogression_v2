@@ -65,16 +65,158 @@ refdir=/mnt/netapp2/Store_csebdjgl/reference_genomes/lynx_rufus_mLynRuf2.2
 # chrs
 chrs=($(cat ${refdir}/autosomic_scaffolds_list.txt))
 
-for pop in lpa wel sel eel; do
+# for pop in lpa wel sel eel; do
+# for pop in lpa wel; do
+for pop in sel eel; do
     for chr in ${chrs[@]}; do
         sbatch \
             --job-name=${pop}_${chr}_ps \
             --output=logs/phasing/${pop}_${chr}_ps.out \
             --error=logs/phasing/${pop}_${chr}_ps.err \
-            -c 2 --mem 40G -t 00-06:00:00 \
+            -c 2 --mem 20G -t 03-00:00:00 \
             src/phasing/run_whatshap_ps.sh ${pop} ${chr}
     done
 done
-
 ```
 
+### Phase using SHAPEIT4
+
+SHAPEIT needs the VCFs zipped and indexed:
+
+```
+# refdir
+refdir=/mnt/netapp2/Store_csebdjgl/reference_genomes/lynx_rufus_mLynRuf2.2
+# chrs
+chrs=($(cat ${refdir}/autosomic_scaffolds_list.txt))
+# vcfdir
+vcfdir=/mnt/netapp2/Store_csebdjgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
+
+# for pop in lpa wel sel eel; do
+# for pop in lpa wel; do
+for pop in sel eel; do
+    for chr in ${chrs[@]}; do
+        # i_vcf
+        i_vcf=${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.${pop}_pop.${chr}.ps.vcf
+        echo "zipping ${i_vcf}"
+        bgzip ${i_vcf}
+        echo "indexing ${i_vcf}.gz"
+        bcftools index ${i_vcf}.gz
+    done
+done
+```
+Run SHAPEIT4 to phase the gzipped, indexed, phase set vcf using the [run_shapeit.sh](src/phasing/run_shapeit.sh) script:
+```
+# refdir
+refdir=/mnt/netapp2/Store_csebdjgl/reference_genomes/lynx_rufus_mLynRuf2.2
+# chrs
+chrs=($(cat ${refdir}/autosomic_scaffolds_list.txt))
+
+# for pop in lpa wel sel eel; do
+# for pop in sel eel; do
+for pop in lpa wel; do
+    for chr in ${chrs[@]}; do
+        sbatch \
+            --job-name=${pop}_${chr}_shapeit \
+            --output=logs/phasing/${pop}_${chr}_shapeit.out \
+            --error=logs/phasing/${pop}_${chr}_shapeit.err \
+            -c 2 --mem 10G -t 00-01:00:00 \
+            src/phasing/run_shapeit.sh ${pop} ${chr}
+    done
+done
+```
+Make pop_pair vcf by merging and concatenating chromosome vcf of each pop:
+```
+module load cesga/2020 bcftools/1.19
+
+# refdir
+refdir=/mnt/netapp2/Store_csebdjgl/reference_genomes/lynx_rufus_mLynRuf2.2
+# chrs
+chrs=($(cat ${refdir}/autosomic_scaffolds_list.txt))
+# vcfdir
+vcfdir=/mnt/netapp2/Store_csebdjgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
+
+## zip & index pops
+# for pop in lpa wel sel eel; do
+# for pop in sel eel; do
+for pop in lpa wel; do
+    for chr in ${chrs[@]}; do
+        vcf=${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.${pop}_pop.${chr}.ps.phased.vcf
+        echo "zip & index: ${vcf}"
+        bgzip ${vcf}
+        tabix -p vcf ${vcf}.gz
+    done
+done
+
+## merge pop pair
+# for pop in wel eel sel
+for pop in wel; do
+    for chr in ${chrs[@]}; do
+        echo "merging and indexing ${pop_pair} ${chr} vcf:"
+        echo "${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.${chr}.ps.phased.merged.vcf"
+        # merge chromosome vcf using bcftools (tac to reverse order so that lpa is pop2)
+        bcftools merge -O "z" $(ls ${vcfdir}/*.ps.phased.vcf.gz | grep -E "${pop}_pop|lpa_pop" | grep ".${chr}." | tac) \
+            > ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.${chr}.ps.phased.merged.vcf.gz
+        # index vcf
+        tabix -p vcf ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.${chr}.ps.phased.merged.vcf.gz
+    done
+done
+
+## concat pop pair
+# for pop in wel eel sel
+for pop in wel; do
+    echo "concatenating lpa-${pop}"
+    vcf-concat $(ls ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.*.ps.phased.merged.vcf.gz) \
+        > ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.vcf
+done
+
+## add old header to vcf
+# for pop in wel eel sel
+for pop in wel; do
+    grep "##" ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.vcf \
+        > ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.vcf
+    echo "##INFO=<ID=CM,Number=1,Type=Float,Description='CentiMorgan'>" \
+        >> ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.vcf
+    grep -m1 "#CHR" ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.vcf \
+        >> ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.vcf
+    grep -v "#" ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.vcf \
+        >> ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.vcf
+done
+
+## annotate AF,AN fields
+# for pop in wel eel sel
+for pop in wel; do
+    echo "annotating lpa-${pop}"
+    bcftools +fill-tags ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.vcf -- -t AF,AN \
+    > ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.afan.vcf
+done
+```
+
+### Filter phased VCF
+
+Apply same filters as other VCF (depth & non-variant sites - missing data removed by phasing):
+
+```
+module load cesga/2020 bcftools/1.19
+module load bedtools
+
+# vcfdir
+vcfdir=/mnt/netapp2/Store_csebdjgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
+
+# for pop_pair in wel eel sel
+for pop in wel; do
+    # apply the filter based on read depth
+    echo "filtering lpa-${pop} vcf removing windows with an excess of read depth:"
+    bedtools subtract -header \
+        -a ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.afan.vcf \
+        -b data/variant_filtering/depth/lpa.rd_filter.bed |
+    bedtools subtract -header \
+        -a stdin \
+        -b data/variant_filtering/depth/${pop}.rd_filter.bed \
+    > ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.afan.rd_fil.vcf
+
+    echo "removing non-variant SNPs from lpa-${pop} population pair"
+    bcftools view -e "INFO/AF=1.00 | INFO/AF=0.00" \
+        ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.afan.rd_fil.vcf \
+    > ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf
+done
+```
