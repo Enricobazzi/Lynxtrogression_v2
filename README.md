@@ -31,4 +31,5 @@ pip install demes
 pip uninstall ruamel.yaml
 pip install "ruamel.yaml<0.18.0"
 pip install pandas
+conda install -c conda-forge dadi
 ```
