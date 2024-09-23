@@ -26,9 +26,9 @@ def main(vcf, popmap, pop_pair, out_dir, n_bootstraps, chunk_size):
     chunks = dadi.Misc.fragment_data_dict(dd, chunk_size)
     if pop_pair == "lpa-wel":
         ns = [40, 44]
-    elif pop_pair == "lpa-sel":
-        ns = [38, 44]
     elif pop_pair == "lpa-eel":
+        ns = [38, 44]
+    elif pop_pair == "lpa-sel":
         ns = [24, 44]
     boots = dadi.Misc.bootstraps_from_dd_chunks(chunks, n_bootstraps, pop_ids, ns, polarized = False)
     for n in range(len(boots)):

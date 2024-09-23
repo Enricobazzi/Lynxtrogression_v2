@@ -186,7 +186,7 @@ Number of processes: 10
 Split fractions: False
 Lower bound of first split: 20000
 Dynamics: Sud, Exp
-Linked SNP's: True
+Linked SNP's: False
 Min_N: 0.001
 Max_N: 50
 Max_T: 10
@@ -208,6 +208,9 @@ Const_for_mutation_rate: 1.475
 Run gadma:
 ```
 pair=lpa-wel
+pair=lpa-eel
+pair=lpa-sel
+
 for n in {1..50}; do
     sbatch --job-name=${n}_gadma_${pair} \
         --output=logs/demographic_inference/${pair}.gadma.${n}.out \
@@ -220,7 +223,22 @@ Resume the unfinished runs:
 ```
 # first resumed
 pair=lpa-wel
+pair=lpa-eel
+pair=lpa-sel
+
 for n in {1..50}; do
+    if [ -d data/demographic_inference/${pair}_${n} ]; then
+        ncomplete=$(grep "algor" data/demographic_inference/${pair}_${n}/GADMA.log | wc -l)
+        if [ $ncomplete -eq 10 ]; then
+            echo "RUN ${pair}_${n} COMPLETE!"
+        else
+            echo "RUN ${pair}_${n} only: $ncomplete completed"
+        fi
+    fi
+done
+
+for n in {1..50}; do
+# for n in 5 10 18 28; do
     ncomplete=$(grep "algor" data/demographic_inference/${pair}_${n}/GADMA.log | wc -l)
     if [ $ncomplete -ne 10 ]; then
         echo "RESUMING RUN ${pair}_${n}:"
@@ -231,15 +249,18 @@ for n in {1..50}; do
     fi
 done
 
-pair=lpa-wel
 for n in {1..50}; do
     if [ -d data/demographic_inference/${pair}_${n}_resumed ]; then
     ncomplete=$(grep "algor" data/demographic_inference/${pair}_${n}_resumed/GADMA.log | wc -l)
         if [ $ncomplete -eq 10 ]; then
             echo "RUN ${pair}_${n}_resumed COMPLETE!"
+        else
+            echo "RUN ${pair}_${n}_resumed only: $ncomplete completed"
         fi
     fi
 done
+
+####################################################################################
 
 # second resumed
 pair=lpa-wel
@@ -320,11 +341,19 @@ done
 
 ```
 
-Get results (demes yamls and moments scripts) *explore all the resumed folders*
+Get results (demes yamls and moments scripts) *REMEMBER to explore ALL the resumed folders*
 ```
 pair=lpa-wel
+pair=lpa-eel
 
 # DEMES YAMLS = final_best_logLL_model_demes_code.py.yml
+mkdir data/demographic_inference/${pair}_best_yamls
+for yml in $(ls data/demographic_inference/${pair}_*/*/final_*.yml); do
+    n=$(echo $yml | cut -d'/' -f3 | cut -d'_' -f2)
+    k=$(echo $yml | cut -d'/' -f4)
+    cp $yml data/demographic_inference/${pair}_best_yamls/${pair}_${n}_${k}_final_best_model.yaml
+done
+
 for n in {1..50}; do
     for k in {1..10}; do
         yaml=data/demographic_inference/${pair}_${n}_resumed_resumed_resumed/${k}/final_best_logLL_model_demes_code.py.yml
@@ -333,7 +362,15 @@ for n in {1..50}; do
         fi
     done
 done
+
 # MOMENTS SCRIPTS = final_best_logLL_model_moments_code.py
+mkdir data/demographic_inference/${pair}_best_moments
+for moms in $(ls data/demographic_inference/${pair}_*/*/final_best_logLL_model_moments_code.py); do
+    n=$(echo $moms | cut -d'/' -f3 | cut -d'_' -f2)
+    k=$(echo $moms | cut -d'/' -f4)
+    cp $moms data/demographic_inference/${pair}_best_moments/${pair}_${n}_${k}_final_best_moments.py
+done
+
 for n in {1..50}; do
     for k in {1..10}; do
         moms=data/demographic_inference/${pair}_${n}_resumed_resumed_resumed/${k}/final_best_logLL_model_moments_code.py
@@ -342,10 +379,37 @@ for n in {1..50}; do
         fi
     done
 done
-```
+
+# DADI SCRIPTS = final_best_logLL_model_dadi_code.py
+mkdir data/demographic_inference/${pair}_best_dadi
+for dads in $(ls data/demographic_inference/${pair}_*/*/final_best_logLL_model_dadi_code.py); do
+    n=$(echo $dads | cut -d'/' -f3 | cut -d'_' -f2)
+    k=$(echo $dads | cut -d'/' -f4)
+    cp $dads data/demographic_inference/${pair}_best_dadi/${pair}_${n}_${k}_final_best_dadi.py
+done
 
 ```
+Likelihood table
+```
+# LIKELIHOOD TABLE
 pair=lpa-wel
+pair=lpa-eel
+
+for log in $(ls data/demographic_inference/${pair}_*/**/GADMA_GA.log); do
+    m=$(echo $log | cut -d'/' -f3)
+    n=$(echo $log | cut -d'/' -f4)
+    run=$(echo "${m}_${n}")
+    ll=$(tail $log | grep "y:" | cut -d':' -f2 | cut -d' ' -f2 | tail -1)
+    if [[ $ll == "" ]]; then
+        fit=$(tail $log | grep "Value of fitness:" | cut -d':' -f2 | cut -d' ' -f2 | tail -1)
+        echo "${run} ${fit}"
+    else
+        echo "${run} ${ll}"
+    fi
+done > data/demographic_inference/${pair}_ll_table.txt
+
+####################################################################################
+
 # LIKELIHOOD TABLE
 echo "run log-like" > ll_table.txt
 
@@ -413,19 +477,24 @@ sort -rnk 2 ll_table.txt | uniq > tmp && mv tmp ll_table.txt
 
 Instructions in the [gadma manual page](https://gadma.readthedocs.io/en/latest/user_manual/confidence_intervals.html)
 
-From running GADMA2 I obtained 3 almost equally likely models which were models 12_9, 6_2 and 20_7.
+From running GADMA2 on lpa-wel I obtained 3 almost equally likely models which were models 12_9, 6_2 and 20_7.
+
+From running GADMA2 on lpa-eel the 3 most likely models were models 34_7, 38_4 and 30_1.
 
 In order to obtain confidence intervals for our results we need to bootstrap our data. Since we are using the full dataset where SNPs are correlated between eachother, bootstraps will need to be done in blocks, as explained in the [dadi manual](https://dadi.readthedocs.io/en/latest/user-guide/bootstrapping/).
 
 The python script [make_block_bootstrap.py](src/demographic_inference/make_block_bootstrap.py) generates these bootstraps (100 bootstraps with 200kb chunk size by default):
 
 ```
-vcf=/mnt/netapp2/Store_csebdjgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-wel_pair.miss_fil.rd_fil.variant.nogenes.vcf
-popmap=data/demographic_inference/lpa-wel.popmap.txt
 pop_pair=lpa-wel
-out_dir=data/demographic_inference/lpa-wel_bootstrap
+pop_pair=lpa-eel
+pop_pair=lpa-sel
 
-python src/demographic_inference/make_block_bootstrap.py \
+vcf=/mnt/netapp2/Store_csebdjgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs/lynxtrogression_v2.autosomic_scaffolds.filter4.${pop_pair}_pair.miss_fil.rd_fil.variant.nogenes.vcf
+popmap=data/demographic_inference/${pop_pair}.popmap.txt
+out_dir=data/demographic_inference/${pop_pair}_bootstrap
+
+/mnt/netapp1/Store_CSIC/home/csic/eye/eba/gadma2/bin/python src/demographic_inference/make_block_bootstrap.py \
     --vcf ${vcf} \
     --popmap ${popmap} \
     --pop_pair ${pop_pair} \
@@ -438,6 +507,7 @@ For this script to run I need to prepare a model python script for each of the t
 
 ```
 pair=lpa-wel
+mkdir data/demographic_inference/${pair}_CI/
 for run in 12_9 6_2 20_7; do
     sbatch --job-name=${run}_CI \
         --output=logs/demographic_inference/${pair}_${run}.CI.out \
@@ -447,8 +517,19 @@ for run in 12_9 6_2 20_7; do
             data/demographic_inference/${pair}_best_moments/${pair}_${run}_final_best_moments.py \
             data/demographic_inference/${pair}_CI/${pair}_${run}
 done
-```
 
+pair=lpa-eel
+mkdir data/demographic_inference/${pair}_CI/
+for run in 34_7 38_4 30_1; do
+    sbatch --job-name=${run}_CI \
+        --output=logs/demographic_inference/${pair}_${run}.CI.out \
+        --error=logs/demographic_inference/${pair}_${run}.CI.err \
+        src/demographic_inference/sbatch_ls_on_boot.sh \
+            data/demographic_inference/${pair}_bootstrap \
+            data/demographic_inference/${pair}_best_moments/${pair}_${run}_final_best_moments.py \
+            data/demographic_inference/${pair}_CI/${pair}_${run}
+done
+```
 
 The output of `gadma-run_ls_on_boot_data` result has parameters in genetic units. I translate them to physical units using the [convert_ls_on_boot_result.py](src/demographic_inference/convert_ls_on_boot_result.py) python script.
 
@@ -464,6 +545,13 @@ for run in 12_9 6_2 20_7; do
         --boot_table data/demographic_inference/${pair}_CI/${pair}_${run}/result_table.csv \
         --mu 6e-9 --L 630916286
 done
+
+pair=lpa-eel # --mu 6e-9 --L 630430040
+for run in 34_7 38_4 30_1; do
+    python src/demographic_inference/convert_ls_on_boot_result.py \
+        --boot_table data/demographic_inference/${pair}_CI/${pair}_${run}/result_table.csv \
+        --mu 6e-9 --L 6690115
+done
 ```
 
 This generates a table called `result_table_converted.csv` in the same folder of the CI results. I use this table to plot the distribution and calculate confidence intervals of the parameters converted to physical units using the python script [plot_boot_params.py](src/demographic_inference/plot_boot_params.py):
@@ -474,9 +562,71 @@ for model in 12_9 6_2 20_7; do
         --csv data/demographic_inference/${pair}_CI/${pair}_${model}/result_table_converted.csv \
         --pop_pair ${pair} --model ${model}
 done
+
+pair=lpa-eel
+for model in 34_7 38_4 30_1; do
+    python src/demographic_inference/plot_boot_params.py \
+        --csv data/demographic_inference/${pair}_CI/${pair}_${model}/result_table_converted.csv \
+        --pop_pair ${pair} --model ${model}
+done
 ```
 
 This will calculate confidence intervals for each parameter and plot the distribution of values obtained by running local search 100 bootstrap replicates of the data. The limit values are calculated as 2.5th and 97.5th percentiles.
+
+### Plotting Results
+
+#### Individual parameters distributions
+
+The plot of the distributions of values from bootstrap optimizations for each parameter in the model is generated by [plot_boot_params.py](src/demographic_inference/plot_boot_params.py), when obtaining confidence intervals (see above).
+
+#### Data vs Model - 2d SFS and residuals
+
+To get the population pair FS file from the VCF I use [make_fs_from_vcf.py](src/demographic_inference/make_fs_from_vcf.py):
+```
+module load cesga/system miniconda3/22.11.1-1 && source activate /mnt/netapp1/Store_CSIC/home/csic/eye/eba/gadma2
+
+vcf_dir=/mnt/netapp2/Store_csebdjgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
+
+for pair in lpa-wel lpa-eel lpa-sel; do
+    ivcf=${vcf_dir}/lynxtrogression_v2.autosomic_scaffolds.filter4.${pair}_pair.miss_fil.rd_fil.variant.nogenes.vcf
+    /mnt/netapp1/Store_CSIC/home/csic/eye/eba/gadma2/bin/python src/demographic_inference/make_fs_from_vcf.py \
+        --ivcf ${ivcf} \
+        --popinfo data/demographic_inference/${pair}.popmap.txt \
+        --ofs data/demographic_inference/${pair}_real_data.fs
+done
+```
+
+Then plot 2D SFS of model I use [plot_dadi_2d_sfs.py](src/demographic_inference/plot_dadi_2d_sfs.py) which uses the FS data,  the results of bootstrap optimizations (from `gadma-run_ls_on_boot_data` gadma script in the [sbatch_ls_on_boot.sh](src/demographic_inference/sbatch_ls_on_boot.sh)), and the model functions found in [gadma2_best_dadi_models.py](src/demographic_inference/gadma2_best_dadi_models.py). These last are written copying the functions found the best dadi python files generated by gadma (see above: # DADI SCRIPTS = final_best_logLL_model_dadi_code.py). The script will also print the model likelihood using the optimize set of parameters (median of bootstrap replicates).
+```
+pair=lpa-wel
+for model in 12_9 6_2 20_7; do
+    python src/demographic_inference/plot_dadi_2d_sfs.py \
+        --model_name ${model} \
+        --data data/demographic_inference/${pair}_real_data.fs \
+        --params data/demographic_inference/${pair}_CI/${pair}_${model}/result_table.csv \
+        --out plots/demographic_inference/${pair}_${model}.data_vs_model_2d_sfs.pdf
+done
+# model 12_9 log-likelihood: -19006.64499238563
+# model 6_2 log-likelihood: -20020.41804623935
+# model 20_7 log-likelihood: -20332.53172381684
+
+pair=lpa-eel
+for model in 34_7 38_4 30_1; do
+    python src/demographic_inference/plot_dadi_2d_sfs.py \
+        --model_name ${model} \
+        --data data/demographic_inference/${pair}_real_data.fs \
+        --params data/demographic_inference/${pair}_CI/${pair}_${model}/result_table.csv \
+        --out plots/demographic_inference/${pair}_${model}.data_vs_model_2d_sfs.pdf
+done
+# model 34_7 log-likelihood: -17352.519151949233
+# model 30_1 log-likelihood: -17254.492364811882
+
+```
+
+#### Ne and Migration through time
+
+To plot the trajectories of Ne and migration rates through time in the best models I use [plot_ne_mig.py](src/demographic_inference/plot_ne_mig.py)
+
 
 ### Plotting Results ***OLD***
 

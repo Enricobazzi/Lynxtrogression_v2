@@ -19,7 +19,7 @@ theta0 = 4 * args.mu * args.L
 # change name of first column
 df = df.rename(columns={df.columns[0]: "bootstrap"})
 # Nanc
-df["Nanc"] = df["Theta"]/theta0
+df["Nanc"] = df["Theta"] / theta0
 # convert parameters in physical units
 # iterating over columns
 for col in df.columns[1:]:
