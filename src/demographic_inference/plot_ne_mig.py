@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-model = '34_7'
+model = '38_4'
 pop_pair = 'lpa-eel'
 model_name = f'{pop_pair}_{model}'
 graph = demes.load(f'data/demographic_inference/{pop_pair}_best_yamls/{model_name}_final_best_model.yaml')
