@@ -239,6 +239,7 @@ done
 
 for n in {1..50}; do
 # for n in 5 10 18 28; do
+# for n in 15 32 38 43 45 47; do
     ncomplete=$(grep "algor" data/demographic_inference/${pair}_${n}/GADMA.log | wc -l)
     if [ $ncomplete -ne 10 ]; then
         echo "RESUMING RUN ${pair}_${n}:"
@@ -345,6 +346,7 @@ Get results (demes yamls and moments scripts) *REMEMBER to explore ALL the resum
 ```
 pair=lpa-wel
 pair=lpa-eel
+pair=lpa-sel
 
 # DEMES YAMLS = final_best_logLL_model_demes_code.py.yml
 mkdir data/demographic_inference/${pair}_best_yamls
@@ -387,13 +389,14 @@ for dads in $(ls data/demographic_inference/${pair}_*/*/final_best_logLL_model_d
     k=$(echo $dads | cut -d'/' -f4)
     cp $dads data/demographic_inference/${pair}_best_dadi/${pair}_${n}_${k}_final_best_dadi.py
 done
-
 ```
+
 Likelihood table
 ```
 # LIKELIHOOD TABLE
 pair=lpa-wel
 pair=lpa-eel
+pair=lpa-sel
 
 for log in $(ls data/demographic_inference/${pair}_*/**/GADMA_GA.log); do
     m=$(echo $log | cut -d'/' -f3)
@@ -481,6 +484,8 @@ From running GADMA2 on lpa-wel I obtained 3 almost equally likely models which w
 
 From running GADMA2 on lpa-eel the 3 most likely models were models 34_7, 38_4 and 30_1.
 
+From running GADMA2 on lpa-sel the 3 most likely models were models 18_7, 18_10 and 12_6.
+
 In order to obtain confidence intervals for our results we need to bootstrap our data. Since we are using the full dataset where SNPs are correlated between eachother, bootstraps will need to be done in blocks, as explained in the [dadi manual](https://dadi.readthedocs.io/en/latest/user-guide/bootstrapping/).
 
 The python script [make_block_bootstrap.py](src/demographic_inference/make_block_bootstrap.py) generates these bootstraps (100 bootstraps with 200kb chunk size by default):
@@ -529,6 +534,18 @@ for run in 34_7 38_4 30_1; do
             data/demographic_inference/${pair}_best_moments/${pair}_${run}_final_best_moments.py \
             data/demographic_inference/${pair}_CI/${pair}_${run}
 done
+
+pair=lpa-sel
+mkdir data/demographic_inference/${pair}_CI/
+for run in 18_7 18_10 12_6; do
+    sbatch --job-name=${run}_CI \
+        --output=logs/demographic_inference/${pair}_${run}.CI.out \
+        --error=logs/demographic_inference/${pair}_${run}.CI.err \
+        src/demographic_inference/sbatch_ls_on_boot.sh \
+            data/demographic_inference/${pair}_bootstrap \
+            data/demographic_inference/${pair}_best_moments/${pair}_${run}_final_best_moments.py \
+            data/demographic_inference/${pair}_CI/${pair}_${run}
+done
 ```
 
 The output of `gadma-run_ls_on_boot_data` result has parameters in genetic units. I translate them to physical units using the [convert_ls_on_boot_result.py](src/demographic_inference/convert_ls_on_boot_result.py) python script.
@@ -546,11 +563,11 @@ for run in 12_9 6_2 20_7; do
         --mu 6e-9 --L 630916286
 done
 
-pair=lpa-eel # --mu 6e-9 --L 630430040
+pair=lpa-eel
 for run in 34_7 38_4 30_1; do
     python src/demographic_inference/convert_ls_on_boot_result.py \
         --boot_table data/demographic_inference/${pair}_CI/${pair}_${run}/result_table.csv \
-        --mu 6e-9 --L 6690115
+        --mu 6e-9 --L 630430040
 done
 ```
 
@@ -619,8 +636,8 @@ for model in 34_7 38_4 30_1; do
         --out plots/demographic_inference/${pair}_${model}.data_vs_model_2d_sfs.pdf
 done
 # model 34_7 log-likelihood: -17352.519151949233
+# model 38_4 log-likelihood: -16765.383200870114
 # model 30_1 log-likelihood: -17254.492364811882
-
 ```
 
 #### Ne and Migration through time
