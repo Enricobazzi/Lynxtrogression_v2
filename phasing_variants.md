@@ -81,8 +81,52 @@ done
 
 ### Phase using SHAPEIT4
 
-SHAPEIT needs the VCFs zipped and indexed:
+SHAPEIT needs at least 20 samples per population to be imputed. For this I duplicate the genotypes of samples from eel and sel:
+```
+pop=eel
+nsamples=19
 
+pop=sel
+nsamples=12
+
+# vcfdir
+vcfdir=/mnt/netapp2/Store_csebdjgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
+# refdir
+refdir=/mnt/netapp2/Store_csebdjgl/reference_genomes/lynx_rufus_mLynRuf2.2
+# chrs
+chrs=($(cat ${refdir}/autosomic_scaffolds_list.txt))
+
+for chr in ${chrs[@]}; do
+    # i_vcf
+    i_vcf=${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.${pop}_pop.${chr}.ps.vcf
+    
+    if [ -f $i_vcf ]; then
+        echo "saving ${i_vcf} as old"
+        cp ${i_vcf} ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.${pop}_pop.${chr}.ps.old.vcf
+        
+        echo "duplicating samples in ${i_vcf}"
+        echo "copying header"
+        grep "##" ${i_vcf} > tmp
+        
+        echo "adding sample names"
+        paste <(grep "#CHR" ${i_vcf}) \
+            <(paste -d '_' <(grep "#CHR" ${i_vcf} | tr '\t' '\n' | grep "_") <(yes "2" | head -n ${nsamples}) | tr '\n' '\t') | 
+        sed 's/^[ \t]*//;s/[ \t]*$//' >> tmp
+        
+        echo "extracting genotypes of ${nsamples} samples"
+        grep -v "#" ${i_vcf} | rev | cut -f1-${nsamples} | rev > tmp.gts
+        
+        echo "pasting the GTs and completing duplicated VCF"
+        paste <(grep -v "#" ${i_vcf}) <(cat tmp.gts) >> tmp
+        
+        echo "copy and clean"
+        mv tmp ${i_vcf}
+        rm tmp.gts
+    fi
+done
+```
+
+SHAPEIT needs the VCFs zipped and indexed:
 ```
 # refdir
 refdir=/mnt/netapp2/Store_csebdjgl/reference_genomes/lynx_rufus_mLynRuf2.2
@@ -104,6 +148,7 @@ for pop in sel eel; do
     done
 done
 ```
+
 Run SHAPEIT4 to phase the gzipped, indexed, phase set vcf using the [run_shapeit.sh](src/phasing/run_shapeit.sh) script:
 ```
 # refdir
@@ -112,8 +157,8 @@ refdir=/mnt/netapp2/Store_csebdjgl/reference_genomes/lynx_rufus_mLynRuf2.2
 chrs=($(cat ${refdir}/autosomic_scaffolds_list.txt))
 
 # for pop in lpa wel sel eel; do
-# for pop in sel eel; do
-for pop in lpa wel; do
+# for pop in lpa wel; do
+for pop in sel eel; do
     for chr in ${chrs[@]}; do
         sbatch \
             --job-name=${pop}_${chr}_shapeit \
@@ -124,6 +169,24 @@ for pop in lpa wel; do
     done
 done
 ```
+
+Remove duplicated samples from vcfs:
+```
+# vcfdir
+vcfdir=/mnt/netapp2/Store_csebdjgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
+
+for pop in eel sel; do
+    for vcf in $(ls ${vcfdir}/*${pop}_pop*.phased.vcf); do
+        chr=$(echo $vcf | rev | cut -d'/' -f1 | rev | cut -d'.' -f5,6)
+        vcftools --vcf ${vcf} \
+            --keep data/${pop}.samples.txt \
+            --recode --recode-INFO-all --out ${pop}.${chr}
+        mv ${pop}.${chr}.recode.vcf ${vcf}
+        rm ${pop}.${chr}.log
+    done
+done
+```
+
 Make pop_pair vcf by merging and concatenating chromosome vcf of each pop:
 ```
 module load cesga/2020 bcftools/1.19
@@ -137,8 +200,8 @@ vcfdir=/mnt/netapp2/Store_csebdjgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
 
 ## zip & index pops
 # for pop in lpa wel sel eel; do
-# for pop in sel eel; do
-for pop in lpa wel; do
+# for pop in lpa wel; do
+for pop in sel eel; do
     for chr in ${chrs[@]}; do
         vcf=${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.${pop}_pop.${chr}.ps.phased.vcf
         echo "zip & index: ${vcf}"
@@ -149,7 +212,7 @@ done
 
 ## merge pop pair
 # for pop in wel eel sel
-for pop in wel; do
+for pop in eel sel; do
     for chr in ${chrs[@]}; do
         echo "merging and indexing ${pop_pair} ${chr} vcf:"
         echo "${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.${chr}.ps.phased.merged.vcf"
@@ -163,7 +226,7 @@ done
 
 ## concat pop pair
 # for pop in wel eel sel
-for pop in wel; do
+for pop in eel sel; do
     echo "concatenating lpa-${pop}"
     vcf-concat $(ls ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.*.ps.phased.merged.vcf.gz) \
         > ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.vcf
@@ -171,7 +234,7 @@ done
 
 ## add old header to vcf
 # for pop in wel eel sel
-for pop in wel; do
+for pop in eel sel; do
     grep "##" ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.vcf \
         > ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.vcf
     echo "##INFO=<ID=CM,Number=1,Type=Float,Description='CentiMorgan'>" \
@@ -184,7 +247,7 @@ done
 
 ## annotate AF,AN fields
 # for pop in wel eel sel
-for pop in wel; do
+for pop in eel sel; do
     echo "annotating lpa-${pop}"
     bcftools +fill-tags ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.vcf -- -t AF,AN \
     > ${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.afan.vcf
@@ -203,7 +266,7 @@ module load bedtools
 vcfdir=/mnt/netapp2/Store_csebdjgl/lynx_genome/lynx_data/mLynRuf2.2_ref_vcfs
 
 # for pop_pair in wel eel sel
-for pop in wel; do
+for pop in eel sel; do
     # apply the filter based on read depth
     echo "filtering lpa-${pop} vcf removing windows with an excess of read depth:"
     bedtools subtract -header \
