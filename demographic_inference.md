@@ -569,6 +569,13 @@ for run in 34_7 38_4 30_1; do
         --boot_table data/demographic_inference/${pair}_CI/${pair}_${run}/result_table.csv \
         --mu 6e-9 --L 630430040
 done
+
+pair=lpa-sel
+for run in 18_7 18_10 12_6; do
+    python src/demographic_inference/convert_ls_on_boot_result.py \
+        --boot_table data/demographic_inference/${pair}_CI/${pair}_${run}/result_table.csv \
+        --mu 6e-9 --L 638938641
+done
 ```
 
 This generates a table called `result_table_converted.csv` in the same folder of the CI results. I use this table to plot the distribution and calculate confidence intervals of the parameters converted to physical units using the python script [plot_boot_params.py](src/demographic_inference/plot_boot_params.py):
@@ -582,6 +589,13 @@ done
 
 pair=lpa-eel
 for model in 34_7 38_4 30_1; do
+    python src/demographic_inference/plot_boot_params.py \
+        --csv data/demographic_inference/${pair}_CI/${pair}_${model}/result_table_converted.csv \
+        --pop_pair ${pair} --model ${model}
+done
+
+pair=lpa-sel
+for model in 18_7 18_10 12_6; do
     python src/demographic_inference/plot_boot_params.py \
         --csv data/demographic_inference/${pair}_CI/${pair}_${model}/result_table_converted.csv \
         --pop_pair ${pair} --model ${model}
@@ -638,6 +652,19 @@ done
 # model 34_7 log-likelihood: -17352.519151949233
 # model 38_4 log-likelihood: -16765.383200870114
 # model 30_1 log-likelihood: -17254.492364811882
+
+pair=lpa-sel
+for model in 18_7 18_10 12_6; do
+    python src/demographic_inference/plot_dadi_2d_sfs.py \
+        --model_name ${model} \
+        --data data/demographic_inference/${pair}_real_data.fs \
+        --params data/demographic_inference/${pair}_CI/${pair}_${model}/result_table.csv \
+        --out plots/demographic_inference/${pair}_${model}.data_vs_model_2d_sfs.pdf
+done
+
+# model 18_7 log-likelihood: -16191.767406596058
+# model 18_10 log-likelihood: -16652.769186434907
+# model 12_6 log-likelihood: -16411.050771833536
 ```
 
 #### Ne and Migration through time

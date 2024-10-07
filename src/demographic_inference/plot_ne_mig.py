@@ -5,8 +5,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-model = '38_4'
-pop_pair = 'lpa-eel'
+model = '12_6'
+pop_pair = 'lpa-sel'
 model_name = f'{pop_pair}_{model}'
 graph = demes.load(f'data/demographic_inference/{pop_pair}_best_yamls/{model_name}_final_best_model.yaml')
 boot = pd.read_csv(f'data/demographic_inference/{pop_pair}_CI/{model_name}/result_table_converted.csv')
