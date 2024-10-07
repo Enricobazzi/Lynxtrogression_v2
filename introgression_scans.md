@@ -46,7 +46,7 @@ The migration scenarios to be simulated are:
 - baab: bidiractional migration, with first ba and then ab in forward time
 - none: no migration
 
-The time of migration is set to be a random time between the present and 1/10th of the divergence time and the amount of migration is a random value between 0 and 0.5.
+The time of migration is set to be a random time between the present and 10 thousand generations ago and the amount of migration is a random value between 0.01 and 0.3.
 
 Both abba and baab will go into the 'bi' category for the discriminator, but are divided here because of how you need to specify the order of migrations in ms. This means we will simulate X ab, ba and none, and X/2 abba and baab for each demographic model.
 
@@ -54,41 +54,41 @@ Both abba and baab will go into the 'bi' category for the discriminator, but are
 pop_pair=lpa-wel
 pop_pair=lpa-eel
 
-# for migration in ab ba bi none; do
-#     mkdir data/introgression_scans/simulations/${pop_pair}_${migration}_sims/
-# done
-# 
-# for model in 12_9 20_7 6_2; do
-# for model in 34_7 38_4 30_1; do
-#     mkdir data/introgression_scans/simulations/${pop_pair}_ab_sims/${model}/
-#     mkdir data/introgression_scans/simulations/${pop_pair}_ba_sims/${model}/
-#     mkdir data/introgression_scans/simulations/${pop_pair}_bi_sims/${model}_abba/
-#     mkdir data/introgression_scans/simulations/${pop_pair}_bi_sims/${model}_baab/
-#     mkdir data/introgression_scans/simulations/${pop_pair}_none_sims/${model}/
-# done
+for migration in ab ba bi none; do
+    mkdir data/introgression_scans/simulations/${pop_pair}_${migration}_sims/
+done
 
-# for model in 12_9 20_7 6_2; do
+for model in 12_9 20_7 6_2; do
+for model in 34_7 38_4 30_1; do
+    mkdir data/introgression_scans/simulations/${pop_pair}_ab_sims/${model}/
+    mkdir data/introgression_scans/simulations/${pop_pair}_ba_sims/${model}/
+    mkdir data/introgression_scans/simulations/${pop_pair}_bi_sims/${model}_abba/
+    mkdir data/introgression_scans/simulations/${pop_pair}_bi_sims/${model}_baab/
+    mkdir data/introgression_scans/simulations/${pop_pair}_none_sims/${model}/
+done
+
+for model in 12_9 20_7 6_2; do
 for model in 34_7 38_4 30_1; do
     for migration in ab ba none; do
-        python src/introgression_scans/simulate_data.py \
+        python src/introgression_scans/simulate_data_withM.py \
             --demes_yaml data/demographic_inference/${pop_pair}_best_yamls/${pop_pair}_${model}_final_best_model.yaml \
             --confint data/demographic_inference/${pop_pair}_CI/${pop_pair}.${model}.CI.csv \
             --path_to_msmodified src/introNets/msmodified/ms \
             --migration ${migration} \
-            --nreps 15000 \
+            --nreps 20000 \
             --odir data/introgression_scans/simulations/${pop_pair}_${migration}_sims/${model}/
     done
 done
 
-# for model in 12_9 20_7 6_2; do
+for model in 12_9 20_7 6_2; do
 for model in 34_7 38_4 30_1; do
     for migration in abba baab; do
-        python src/introgression_scans/simulate_data.py \
+        python src/introgression_scans/simulate_data_withM.py \
             --demes_yaml data/demographic_inference/${pop_pair}_best_yamls/${pop_pair}_${model}_final_best_model.yaml \
             --confint data/demographic_inference/${pop_pair}_CI/${pop_pair}.${model}.CI.csv \
             --path_to_msmodified src/introNets/msmodified/ms \
             --migration ${migration} \
-            --nreps 7500 \
+            --nreps 10000 \
             --odir data/introgression_scans/simulations/${pop_pair}_bi_sims/${model}_${migration}/
     done
 done
@@ -101,38 +101,38 @@ I filter out from simulations the ones with < 128 segsites using [filter_sims.py
 pop_pair=lpa-wel
 pop_pair=lpa-eel
 
-# for migration in ab ba bi none; do
-#     mkdir data/introgression_scans/simulations/${pop_pair}_${migration}_filtered_sims/
-# done
-# 
-# for model in 12_9 20_7 6_2; do
-# for model in 34_7 38_4 30_1; do
-#     mkdir data/introgression_scans/simulations/${pop_pair}_ab_filtered_sims/${model}/
-#     mkdir data/introgression_scans/simulations/${pop_pair}_ba_filtered_sims/${model}/
-#     mkdir data/introgression_scans/simulations/${pop_pair}_bi_filtered_sims/${model}_abba/
-#     mkdir data/introgression_scans/simulations/${pop_pair}_bi_filtered_sims/${model}_baab/
-#     mkdir data/introgression_scans/simulations/${pop_pair}_none_filtered_sims/${model}/
-# done
+for migration in ab ba bi none; do
+    mkdir data/introgression_scans/simulations/${pop_pair}_${migration}_filtered_sims/
+done
 
-# for model in 12_9 20_7 6_2; do
+for model in 12_9 20_7 6_2; do
+for model in 34_7 38_4 30_1; do
+    mkdir data/introgression_scans/simulations/${pop_pair}_ab_filtered_sims/${model}/
+    mkdir data/introgression_scans/simulations/${pop_pair}_ba_filtered_sims/${model}/
+    mkdir data/introgression_scans/simulations/${pop_pair}_bi_filtered_sims/${model}_abba/
+    mkdir data/introgression_scans/simulations/${pop_pair}_bi_filtered_sims/${model}_baab/
+    mkdir data/introgression_scans/simulations/${pop_pair}_none_filtered_sims/${model}/
+done
+
+for model in 12_9 20_7 6_2; do
 for model in 34_7 38_4 30_1; do
     for migration in ab ba none; do
         echo "filtering ${pop_pair}_${migration} of ${model}"
         python src/introgression_scans/filter_sims.py \
             --idir data/introgression_scans/simulations/${pop_pair}_${migration}_sims/${model}/ \
             --odir data/introgression_scans/simulations/${pop_pair}_${migration}_filtered_sims/${model}/ \
-            --n_sites 128 --n_sims 10000
+            --n_sites 128 --n_sims 12000
     done
 done
 
-# for model in 12_9 20_7 6_2; do
+for model in 12_9 20_7 6_2; do
 for model in 34_7 38_4 30_1; do
     for migration in abba baab; do
         echo "filtering ${pop_pair}_${migration} of ${model}"
         python src/introgression_scans/filter_sims.py \
             --idir data/introgression_scans/simulations/${pop_pair}_bi_sims/${model}_${migration}/ \
             --odir data/introgression_scans/simulations/${pop_pair}_bi_filtered_sims/${model}_${migration}/ \
-            --n_sites 128 --n_sims 5000
+            --n_sites 128 --n_sims 6000
     done
 done
 ```
@@ -141,33 +141,43 @@ done
 
 To format my simulations for training I run [introNets format.py](https://github.com/SchriderLab/introNets/blob/main/src/data/format.py):
 ```
+## ADD HDF5 FOLDER TO OFOLDER
+
 conda activate ~/introNets/intronets
 pop_pair=lpa-wel
+pop_sizes="40,44"
+conda activate ~/introNets/intronets
 pop_pair=lpa-eel
+pop_sizes="38,44"
+conda activate ~/introNets/intronets
+pop_pair=lpa-sel
+pop_sizes="24,44"
+
+mkdir data/introgression_scans/simulations/${pop_pair}_hdf5s
 
 mpirun -n 4 python src/introNets/src/data/format.py \
     --verbose \
     --idir data/introgression_scans/simulations/${pop_pair}_ab_filtered_sims/ \
-    --ofile data/introgression_scans/simulations/${pop_pair}_ab.hdf5 \
-    --pop_sizes 38,44 --out_shape 2,44,128 --pop 1 |& tee logs/introgression_scans/format_${pop_pair}_ab.log
+    --ofile data/introgression_scans/simulations/${pop_pair}_hdf5s/${pop_pair}_ab.hdf5 \
+    --pop_sizes ${pop_sizes} --out_shape 2,44,128 --pop 1 |& tee logs/introgression_scans/format_${pop_pair}_ab.log
 
 mpirun -n 4 python src/introNets/src/data/format.py \
     --verbose \
     --idir data/introgression_scans/simulations/${pop_pair}_ba_filtered_sims/ \
-    --ofile data/introgression_scans/simulations/${pop_pair}_ba.hdf5 \
-    --pop_sizes 38,44 --out_shape 2,44,128 --pop 0 |& tee logs/introgression_scans/format_${pop_pair}_ba.log
+    --ofile data/introgression_scans/simulations/${pop_pair}_hdf5s/${pop_pair}_ba.hdf5 \
+    --pop_sizes ${pop_sizes} --out_shape 2,44,128 --pop 0 |& tee logs/introgression_scans/format_${pop_pair}_ba.log
 
 mpirun -n 4 python src/introNets/src/data/format.py \
     --verbose \
     --idir data/introgression_scans/simulations/${pop_pair}_bi_filtered_sims/ \
-    --ofile data/introgression_scans/simulations/${pop_pair}_bi.hdf5 \
-    --pop_sizes 38,44 --out_shape 2,44,128 --pop -1 |& tee logs/introgression_scans/format_${pop_pair}_bi.log
+    --ofile data/introgression_scans/simulations/${pop_pair}_hdf5s/${pop_pair}_bi.hdf5 \
+    --pop_sizes ${pop_sizes} --out_shape 2,44,128 --pop -1 |& tee logs/introgression_scans/format_${pop_pair}_bi.log
 
 mpirun -n 4 python src/introNets/src/data/format.py \
     --verbose \
     --idir data/introgression_scans/simulations/${pop_pair}_none_filtered_sims/ \
-    --ofile data/introgression_scans/simulations/${pop_pair}_none.hdf5 \
-    --pop_sizes 38,44 --out_shape 2,44,128 --include_zeros |& tee logs/introgression_scans/format_${pop_pair}_none.log
+    --ofile data/introgression_scans/simulations/${pop_pair}_hdf5s/${pop_pair}_none.hdf5 \
+    --pop_sizes ${pop_sizes} --out_shape 2,44,128 --include_zeros |& tee logs/introgression_scans/format_${pop_pair}_none.log
 ```
 
 ## Check formatted simulations
@@ -185,7 +195,7 @@ done
 
 for mig in ab ba bi none; do
     python src/introgression_scans/write_fastas_from_hdf5.py \
-        --ifile data/introgression_scans/simulations/${pop_pair}_${mig}.hdf5 \
+        --ifile data/introgression_scans/simulations/${pop_pair}_hdf5s/${pop_pair}_${mig}.hdf5 \
         --odir data/introgression_scans/simulations/fastas/${pop_pair}_${mig} \
         --nseqs 25
 done
@@ -197,15 +207,20 @@ To train a discriminator of my 4 classes of introgression I run [introNets train
 
 ```
 pop_pair=lpa-wel
-pop_pair=lpa-eel
 script logs/introgression_scans/${pop_pair}_train_disc.log
-
 conda activate ~/introNets/intronets
 pop_pair=lpa-wel
-pop_pair=lpa-eel
 taskset -c 1,2,3,4,5,6,7,8,9,10 \
     python src/introNets/src/models/train_discriminator.py \
-        --idir data/introgression_scans/simulations/ --odir data/introgression_scans/${pop_pair}_discriminator/ --n_classes 4
+        --idir data/introgression_scans/simulations/${pop_pair}_hdf5s/ --odir data/introgression_scans/${pop_pair}_discriminator/ --n_classes 4
+
+pop_pair=lpa-eel
+script logs/introgression_scans/${pop_pair}_train_disc.log
+conda activate ~/introNets/intronets
+pop_pair=lpa-eel
+taskset -c 11,12,13,14,15,16,17,18,19,20 \
+    python src/introNets/src/models/train_discriminator.py \
+        --idir data/introgression_scans/simulations/${pop_pair}_hdf5s/ --odir data/introgression_scans/${pop_pair}_discriminator/ --n_classes 4
 ```
 
 ## Evaluate the discriminator
@@ -293,8 +308,15 @@ Since there is a problem when generating the hdf5 file from npz data, until it's
 
 ```
 conda activate ~/introNets/intronets
-pop=wel
-pop=eel
+pop_pair=lpa-wel
+pop_sizes="40,44"
+conda activate ~/introNets/intronets
+pop_pair=lpa-eel
+pop_sizes="38,44"
+conda activate ~/introNets/intronets
+pop_pair=lpa-sel
+pop_sizes="24,44"
+
 chr=mLynRuf2.2_ChrA1
 chr=mLynRuf2.2_ChrC1
 chr=mLynRuf2.2_ChrB1
@@ -318,7 +340,7 @@ python src/introNets/src/models/apply_disc_to_npz.py \
     --ifile data/introgression_scans/npz_files/lpa-${pop}.${chr}.npz \
     --ofile data/introgression_scans/lpa-${pop}_predictions/${chr}.predictions.csv \
     --weights data/introgression_scans/lpa-${pop}_discriminator/test.weights \
-    --pop_sizes 38,44 \
+    --pop_sizes ${pop_sizes} \
     --shape 2,44,128 \
     --step_size 64 \
     --in_channels 2 \
@@ -350,6 +372,38 @@ for chr in ${chrs[@]}; do
         --chr ${chr} \
         --odir data/introgression_scans/lpa-${pop}_vcf_fastas/${chr} \
         --win_size 128 \
+        --step_size 64
+done
+```
+
+From NPZ
+
+```
+conda activate ~/introNets/intronets
+pop=wel
+pop_sizes="40,44"
+conda activate ~/introNets/intronets
+pop=eel
+pop_sizes="38,44"
+conda activate ~/introNets/intronets
+pop=sel
+pop_sizes="24,44"
+
+# refdir
+refdir=/GRUPOS/grupolince/reference_genomes/lynx_rufus_mLynRuf2.2
+# chrs
+chrs=($(cat ${refdir}/autosomic_scaffolds_list.txt))
+
+mkdir data/introgression_scans/lpa-${pop}_binary_fastas/
+
+for chr in ${chrs[@]}; do
+    echo "writing binary fastas of ${chr}"
+    mkdir data/introgression_scans/lpa-${pop}_binary_fastas/${chr}
+    python src/introNets/src/models/write_binary_fastas_from_npz.py \
+        --ifile data/introgression_scans/npz_files/lpa-${pop}.${chr}.npz \
+        --odir data/introgression_scans/lpa-${pop}_binary_fastas/${chr} \
+        --pop_sizes ${pop_sizes} \
+        --shape 2,44,128 \
         --step_size 64
 done
 ```
@@ -410,9 +464,9 @@ awk '{sum += $3 - $2} END {print sum}' data/introgression_scans/lpa-${pop}_predi
 awk '{sum += $3 - $2} END {print sum}' data/introgression_scans/lpa-${pop}_predictions/ba_introgressed_095.merged.bed
 awk '{sum += $3 - $2} END {print sum}' data/introgression_scans/lpa-${pop}_predictions/bi_introgressed_095.merged.bed
 
-# wel ab = 172664011 / 2285572469 ~7%
-# wel ba = 196112677 / 2285572469 ~8%
-# wel bi = 13383002 / 2285572469 ~0.5%
+# wel ab = 172664011 / 2285572469 ~7%  191267431
+# wel ba = 196112677 / 2285572469 ~8%  112993394
+# wel bi = 13383002 / 2285572469 ~0.5%  5230417
 
 # eel ab = 567142103 / 2285572469 0.24814006586636042
 # eel ba = 160027805 / 2285572469 0.07001650884866342
