@@ -16,6 +16,7 @@ def parse_args():
     parser.add_argument('--L', type=int, help='Length of the sequence', default=100_000)
     parser.add_argument('--mu', type=float, help='Mutation rate', default=6e-9)
     parser.add_argument('--rec', type=float, help='Recombination rate', default=1.9e-8)
+    parser.add_argument('--mtime', type=int, help='Maximum migration time in generations', default=10000)
     return parser.parse_args()
 
 def get_graph_from_yaml(demes_yaml):
@@ -85,7 +86,7 @@ def get_populations(graph):
     pop2 = graph.demes[1].name
     return pop1, pop2
 
-def get_ms_command(graph, N0, samples, mu, L, rec, migration):
+def get_ms_command(graph, N0, samples, mu, L, rec, migration, mtime):
     """
     Get the ms command from the demes graph using demes.to_ms
     """
@@ -95,35 +96,41 @@ def get_ms_command(graph, N0, samples, mu, L, rec, migration):
     mscommand = f'-t {theta} -r {rho} {L} {mscommand}'
     # add migration to the ms command (not the graph) based on the migration direction
     if migration == "ba":
-        t_split = graph.demes[1].start_time
-        mig_time = random.uniform(0, t_split / 10)
+        # t_split = graph.demes[1].start_time
+        # mig_time = random.uniform(0, t_split / 10)
+        mig_time = random.uniform(0, mtime)
         mig_time = mig_time / N0 / 4
-        mig_prop = random.uniform(0, 0.5)
-        mscommand += f' -es {mig_time} 1 {mig_prop} -ej {mig_time} 3 2'
+        mig_prop = random.uniform(0.01, 0.3)
+        mscommand += f' -es {mig_time} 1 {1 - mig_prop} -ej {mig_time} 3 2'
     elif migration == "ab":
-        t_split = graph.demes[1].start_time
-        mig_time = random.uniform(0, t_split / 10)
+        # t_split = graph.demes[1].start_time
+        # mig_time = random.uniform(0, t_split / 10)
+        mig_time = random.uniform(0, mtime)
         mig_time = mig_time / N0 / 4
-        mig_prop = random.uniform(0, 0.5)
-        mscommand += f' -es {mig_time} 2 {mig_prop} -ej {mig_time} 3 1'
+        mig_prop = random.uniform(0.01, 0.3)
+        mscommand += f' -es {mig_time} 2 {1 - mig_prop} -ej {mig_time} 3 1'
     elif migration == "abba":
-        t_split = graph.demes[1].start_time
-        mt1 = random.uniform(0, t_split / 10)
-        mt2 = random.uniform(0, t_split / 10)
+        # t_split = graph.demes[1].start_time
+        # mt1 = random.uniform(0, t_split / 10)
+        # mt2 = random.uniform(0, t_split / 10)
+        mt1 = random.uniform(0, mtime / 10)
+        mt2 = random.uniform(0, mtime / 10)
         mig_time1 = min(mt1, mt2) / N0 / 4
         mig_time2 = max(mt1, mt2) / N0 / 4
-        mig_prop1 = random.uniform(0, 0.5)
-        mig_prop2 = random.uniform(0, 0.5)
-        mscommand += f' -es {mig_time1} 2 {mig_prop1} -ej {mig_time1} 3 1 -es {mig_time2} 1 {mig_prop2} -ej {mig_time2} 4 2'
+        mig_prop1 = random.uniform(0.01, 0.3)
+        mig_prop2 = random.uniform(0.01, 0.3)
+        mscommand += f' -es {mig_time1} 2 {1 - mig_prop1} -ej {mig_time1} 3 1 -es {mig_time2} 1 {1 - mig_prop2} -ej {mig_time2} 4 2'
     elif migration == "baab":
-        t_split = graph.demes[1].start_time
-        mt1 = random.uniform(0, t_split / 10)
-        mt2 = random.uniform(0, t_split / 10)
+        # t_split = graph.demes[1].start_time
+        # mt1 = random.uniform(0, t_split / 10)
+        # mt2 = random.uniform(0, t_split / 10)
+        mt1 = random.uniform(0, mtime / 10)
+        mt2 = random.uniform(0, mtime / 10)
         mig_time1 = min(mt1, mt2) / N0 / 4
         mig_time2 = max(mt1, mt2) / N0 / 4
-        mig_prop1 = random.uniform(0, 0.5)
-        mig_prop2 = random.uniform(0, 0.5)
-        mscommand += f' -es {mig_time1} 1 {mig_prop1} -ej {mig_time1} 3 2 -es {mig_time2} 2 {mig_prop2} -ej {mig_time2} 4 1'
+        mig_prop1 = random.uniform(0.01, 0.3)
+        mig_prop2 = random.uniform(0.01, 0.3)
+        mscommand += f' -es {mig_time1} 1 {1 - mig_prop1} -ej {mig_time1} 3 2 -es {mig_time2} 2 {1 - mig_prop2} -ej {mig_time2} 4 1'
     elif migration == "none":
         mscommand += f' -es 0.0001 1 1.0 -ej 0.0001 3 2'
     else:
@@ -278,7 +285,7 @@ def get_sizes(pop):
     else:
         raise ValueError("Population name not contemplated in the get_sizes script")
 
-def main(demes_yaml, confint, path_to_msmodified, migration, nreps, L, mu, rec, odir):
+def main(demes_yaml, confint, path_to_msmodified, migration, nreps, L, mu, rec, odir, mtime):
     """
     Main workflow:
         - Load demes graph from yaml file
@@ -298,7 +305,7 @@ def main(demes_yaml, confint, path_to_msmodified, migration, nreps, L, mu, rec, 
     # Get the populations names from the demes graph
     pop1, pop2 = get_populations(graph)
     # Generate a dummy ms command (theta is not important) to get the ms command with tbs instead of parameters 
-    mscommand = get_ms_command(graph = graph, N0 = 1000, L = L, samples=[get_sizes(pop1), get_sizes(pop2)], mu = mu, rec = rec, migration = migration)
+    mscommand = get_ms_command(graph = graph, N0 = 1000, L = L, samples=[get_sizes(pop1), get_sizes(pop2)], mu = mu, rec = rec, migration = migration, mtime = mtime)
     ms_string = get_ms_string(mscommand, path_to_msmodified, get_sizes(pop1), get_sizes(pop2), nreps, L)
     # move to odir
     os.chdir(odir)
@@ -307,7 +314,7 @@ def main(demes_yaml, confint, path_to_msmodified, migration, nreps, L, mu, rec, 
         for _ in range(nreps):
             graph = modify_graph_from_confint(graph, confint)
             mscommand = get_ms_command(graph = graph, N0 = graph[pop1].epochs[0].end_size, migration = migration,
-                                       L = L, samples = [get_sizes(pop1), get_sizes(pop2)], mu = mu, rec = rec)
+                                       L = L, samples = [get_sizes(pop1), get_sizes(pop2)], mu = mu, rec = rec, mtime = mtime)
             f.write(f"{' '.join(get_tbs_list(mscommand))}\n")
     # write the ms string
     os.system(f'echo "{ms_string}" > ms_string.sh\n')
@@ -318,4 +325,4 @@ def main(demes_yaml, confint, path_to_msmodified, migration, nreps, L, mu, rec, 
 
 if __name__ == '__main__':
     args = parse_args()
-    main(args.demes_yaml, args.confint, args.path_to_msmodified, args.migration, args.nreps, args.L, args.mu, args.rec, args.odir)
+    main(args.demes_yaml, args.confint, args.path_to_msmodified, args.migration, args.nreps, args.L, args.mu, args.rec, args.odir, args.mtime)
