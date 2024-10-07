@@ -78,7 +78,7 @@ for i in range(0, x.shape[1], step_size):
         blocks.append(x[:, i:i+w_size])
 # create new blocks by sorting the populations
 new_blocks = []
-for n, block in enumerate(blocks):
+for block in blocks:
     print(f'processing block {n}', end = '\r')
     # get the indices of the first population and upsample if needed
     x1_indices = list(range(pop1_size))
