@@ -103,7 +103,10 @@ done
 
 ## Filter simulated data for training
 
-I filter out from simulations_withM the ones with < 128 segsites using [filter_sims.py](src/introgression_scans/filter_sims.py), or [introNets format.py](https://github.com/SchriderLab/introNets/blob/main/src/data/format.py) will throw errors and corrupt the hdf5 file:
+I filter out from simulations_withM the ones with < 128 segsites using [filter_sims.py](src/introgression_scans/filter_sims.py), or [introNets format.py](https://github.com/SchriderLab/introNets/blob/main/src/data/format.py) will throw errors and corrupt the hdf5 file.
+
+*ALSO CREATE 129 SEGSITES SIMS TO NOT HAVE ERROR IN FORMAT.PY*
+
 ```
 conda activate lynxtrogression_v2
 pop_pair=lpa-wel
@@ -267,7 +270,129 @@ taskset -c 1,2,3,4,5,6,7,8,9,10 \
 
 ## Evaluate the discriminator
 
-TBD
+To evaluate the model on additional simulations, I simulate data under each of the demographic models and each introgression scenario 100 times, filter the simulations to 128 SNPs and generate NPZ files to run the discriminator model on:
+```
+mkdir data/introgression_scans/evaluation_withM/
+conda activate lynxtrogression_v2
+
+for pop_pair in lpa-wel lpa-sel; do    
+    if [ ${pop_pair} == 'lpa-wel' ]; then
+        models=(12_9 6_2 20_7)
+        pop_sizes="40,44"
+    elif [ ${pop_pair} == 'lpa-eel' ]; then
+        models=(34_7 38_4 30_1)
+        pop_sizes="38,44"
+    elif [ ${pop_pair} == 'lpa-sel' ]; then
+        models=(12_6 18_7 18_10)
+        pop_sizes="24,44"
+    fi
+    for model in ${models[@]}; do
+        for migration in ab ba abba baab none; do
+            
+            # SIM DATA
+            mkdir data/introgression_scans/evaluation_withM/${pop_pair}_${model}_${migration}
+            python src/introgression_scans/simulate_data_withM.py \
+                --demes_yaml data/demographic_inference/${pop_pair}_best_yamls/${pop_pair}_${model}_final_best_model.yaml \
+                --confint data/demographic_inference/${pop_pair}_CI/${pop_pair}.${model}.CI.csv \
+                --path_to_msmodified src/introNets/msmodified/ms \
+                --migration ${migration} \
+                --nreps 250 \
+                --odir data/introgression_scans/evaluation_withM/${pop_pair}_${model}_${migration}
+            
+            # FILTER SIMS
+            mkdir data/introgression_scans/evaluation_withM/${pop_pair}_${model}_${migration}/filtered
+            if [ ${migration} == 'ab' ] || [ ${migration} == 'ba' ] || [ ${migration} == 'none' ]; then
+                mig=${migration}
+                nsims=100
+            elif [ ${migration} == 'abba' ] || [ ${migration} == 'baab' ]; then
+                mig="bi"
+                nsims=50
+            fi
+            python src/introgression_scans/filter_sims.py \
+                --idir data/introgression_scans/evaluation_withM/${pop_pair}_${model}_${migration} \
+                --odir data/introgression_scans/evaluation_withM/${pop_pair}_${model}_${migration}/filtered \
+                --n_sites 128 --n_sims ${nsims} --migration ${mig} --pop_sizes ${pop_sizes}
+            
+            # CREATE NPZ
+            python src/introgression_scans/get_npz_from_sims.py \
+                --idir data/introgression_scans/evaluation_withM/${pop_pair}_${model}_${migration}/filtered \
+                --ofile data/introgression_scans/evaluation_withM/${pop_pair}_${model}_${migration}.npz \
+                --pop_sizes ${pop_sizes}
+        done
+    done
+done
+```
+
+Get predictions from these simulations:
+```
+conda activate ~/introNets/intronets
+
+for pop_pair in lpa-wel lpa-sel; do    
+    if [ ${pop_pair} == 'lpa-wel' ]; then
+        models=(12_9 6_2 20_7)
+        pop_sizes="40,44"
+    elif [ ${pop_pair} == 'lpa-eel' ]; then
+        models=(34_7 38_4 30_1)
+        pop_sizes="38,44"
+    elif [ ${pop_pair} == 'lpa-sel' ]; then
+        models=(12_6 18_7 18_10)
+        pop_sizes="24,44"
+    fi
+    for model in ${models[@]}; do
+        for migration in ab ba abba baab none; do
+
+            taskset -c 1 python src/introNets/src/models/apply_disc_to_npz.py \
+                --ifile data/introgression_scans/evaluation_withM/${pop_pair}_${model}_${migration}.npz \
+                --ofile data/introgression_scans/evaluation_withM/${pop_pair}_${model}_${migration}.predictions.csv \
+                --weights data/introgression_scans/${pop_pair}_discriminator_withM/test.weights \
+                --pop_sizes ${pop_sizes} \
+                --shape 2,44,128 \
+                --step_size 128 \
+                --in_channels 2 \
+                --n_classes 4
+        
+        done
+    done
+done
+```
+
+To plot them I run [plot_eval.py](src/introgression_scans/plot_eval.py):
+```
+for pop_pair in lpa-wel lpa-sel; do
+
+    if [ ${pop_pair} == 'lpa-wel' ]; then
+        models=(12_9 6_2 20_7)
+    elif [ ${pop_pair} == 'lpa-eel' ]; then
+        models=(34_7 38_4 30_1)
+    elif [ ${pop_pair} == 'lpa-sel' ]; then
+        models=(12_6 18_7 18_10)
+    fi
+
+    # for different threshold values
+    for p in '0.95' '0.9' '0.85' '0.8' '0.75'; do
+        pt=$(echo ${p} | tr '.' '_')
+        # plot all models
+        echo "plot all models ${p}"
+        python src/introgression_scans/plot_eval.py \
+            --idir data/introgression_scans/evaluation_withM \
+            --pop_pair ${pop_pair} \
+            --models $(for model in ${models[@]}; do echo ${model}; done | tr '\n' ',') \
+            --pthresh ${p} \
+            --oplot plots/introgression_scans/evaluation_withM/${pop_pair}.all_models.${pt}.cm.pdf
+        # and then each model
+        for model in ${models[@]}; do
+            echo "plot ${model} ${p}"
+            python src/introgression_scans/plot_eval.py \
+                --idir data/introgression_scans/evaluation_withM \
+                --pop_pair ${pop_pair} \
+                --models ${model} \
+                --pthresh ${p} \
+                --oplot plots/introgression_scans/evaluation_withM/${pop_pair}.${model}.${pt}.cm.pdf
+        done
+    done
+done
+```
+
 
 ## Real data preparation
 
@@ -301,6 +426,8 @@ for chr in ${chrs[@]}; do
         $vcfFileName $species1ListFileName $species2ListFileName $maskedRefFileName $chr $npzFileName
 done
 ```
+
+*THIS IS NOT WORKING AS INTENDED! THERE IS A BUG IN FORMAT_NPZ.PY*
 
 I use [introNets format_npz.py](https://github.com/SchriderLab/introNets/blob/main/src/data/format_npz.py) to convert these files to hdf5. I set `--keys` to `sechMatrix,simMatrix` to have the eurasian lynx population as population1 and the iberian lynx population as population2.
 ```
@@ -380,10 +507,10 @@ chr=mLynRuf2.2_ChrE2_rc
 chr=mLynRuf2.2_ChrE1
 chr=mLynRuf2.2_ChrE3_rc
 
-python src/introNets/src/models/apply_disc_to_npz.py \
+taskset -c 1 python src/introNets/src/models/apply_disc_to_npz.py \
     --ifile data/introgression_scans/npz_files/lpa-${pop}.${chr}.npz \
-    --ofile data/introgression_scans/lpa-${pop}_predictions/${chr}.predictions.csv \
-    --weights data/introgression_scans/lpa-${pop}_discriminator/test.weights \
+    --ofile data/introgression_scans/lpa-${pop}_predictions_withM/${chr}.predictions.csv \
+    --weights data/introgression_scans/lpa-${pop}_discriminator_withM/test.weights \
     --pop_sizes ${pop_sizes} \
     --shape 2,44,128 \
     --step_size 64 \
@@ -456,5 +583,200 @@ done
 
 ## Amount of introgression
 
+The criteria we choose to identify a particular window to be introgressed in one direction is if the probability of introgression in that direction plus the probability of introgression in both directions is greater than 90%. After finding these windows, we additionally call as introgressed those windows which are adjacent to an introgressed window, and have as low as 70% probability to be introgressed as well.
+
+I use the [get_intro_and_predbeds.py](src/introgression_scans/get_intro_and_predbeds.py) script to generate bed files of the introgressed windows in each direction. This generates 4 bed files:
+`lpa_to_sel_intro.bed`, `lpa_to_wel_intro.bed`, `sel_to_lpa_intro.bed`, and `wel_to_lpa_intro.bed`.
+
+I use bedtools to merge consecutive windows in these bed files and create two additional bed files. One has the regions in lpa that have introgression from both wel and sel. The other has the regions that have introgression from lpa in both wel and sel.
+```
+# autosome length : cat mLynRuf2.2.revcomp.scaffolds.fa.fai | grep "Chr" | grep -vE "ChrX|ChrY" | awk '{sum +=$2} END {print sum}' = 2285572469
+for bed in $(ls data/introgression_scans/bed_files/*_intro.bed); do
+    base=$(basename -s '.bed' ${bed})
+    echo "${base}:"
+    bedtools merge \
+        -i data/introgression_scans/bed_files/${base}.bed \
+        > data/introgression_scans/bed_files/${base}.merged.bed
+    echo "$(awk '{sum += $3 - $2} END {print sum}' data/introgression_scans/bed_files/${base}.merged.bed) / 2285572469" | bc -l
+done
+
+# lpa_to_sel_intro:
+# 0.02129420513246478031
+# lpa_to_wel_intro:
+# 0.06237726168550554062
+# sel_to_lpa_intro:
+# 0.04604777815076140558
+# wel_to_lpa_intro:
+# 0.05551230587560949483
+```
+
+Additionally, I also generate 3 more bed files:
+  - wel exclusive regions in lpa
+  - sel exclusive regions in lpa
+  - regions with intro from both wel and sel in lpa (intersect)
+  - regions with intro from either wel or sel in lpa (merge)
+```
+bedtools subtract \
+    -a data/introgression_scans/bed_files/wel_to_lpa_intro.merged.bed \
+    -b data/introgression_scans/bed_files/sel_to_lpa_intro.merged.bed \
+    > data/introgression_scans/bed_files/wel_to_lpa_intro.exclusive.bed
+echo "$(awk '{sum += $3 - $2} END {print sum}' data/introgression_scans/bed_files/wel_to_lpa_intro.exclusive.bed) / 2285572469" | bc -l
+# 0.01917226016428709441
+
+bedtools subtract \
+    -a data/introgression_scans/bed_files/sel_to_lpa_intro.merged.bed \
+    -b data/introgression_scans/bed_files/wel_to_lpa_intro.merged.bed \
+    > data/introgression_scans/bed_files/sel_to_lpa_intro.exclusive.bed
+echo "$(awk '{sum += $3 - $2} END {print sum}' data/introgression_scans/bed_files/sel_to_lpa_intro.exclusive.bed) / 2285572469" | bc -l
+# 0.00970773243943900516
+
+bedtools intersect \
+    -a data/introgression_scans/bed_files/sel_to_lpa_intro.merged.bed \
+    -b data/introgression_scans/bed_files/wel_to_lpa_intro.merged.bed \
+    > data/introgression_scans/bed_files/wel_and_sel_to_lpa_intro.intersect.bed
+echo "$(awk '{sum += $3 - $2} END {print sum}' data/introgression_scans/bed_files/wel_and_sel_to_lpa_intro.intersect.bed) / 2285572469" | bc -l
+# 0.03634004571132240042
+
+bedtools merge \
+    -i <(cat data/introgression_scans/bed_files/sel_to_lpa_intro.merged.bed data/introgression_scans/bed_files/wel_to_lpa_intro.merged.bed | sort -k1,1 -k2,2n) \
+    > data/introgression_scans/bed_files/wel_and_sel_to_lpa_intro.merge.bed
+echo "$(awk '{sum += $3 - $2} END {print sum}' data/introgression_scans/bed_files/wel_and_sel_to_lpa_intro.merge.bed) / 2285572469" | bc -l
+# 0.06522003831504850000
+```
+
+## Introgression and diversity along the chromosomes
+
+To plot introgressed windows in each genome:
+```
+python src/introgression_scans/plot_chroms_intro.py \
+    --ibed data/introgression_scans/bed_files/wel_and_sel_to_lpa_intro.merge.bed \
+    --ofile plots/introgression_scans/intro_genomes/lpa.from_both.pdf
+
+python src/introgression_scans/plot_chroms_intro.py \
+    --ibed data/introgression_scans/bed_files/lpa_to_wel_intro.merged.bed \
+    --ofile plots/introgression_scans/intro_genomes/wel.from_lpa.pdf
+
+python src/introgression_scans/plot_chroms_intro.py \
+    --ibed data/introgression_scans/bed_files/lpa_to_sel_intro.merged.bed \
+    --ofile plots/introgression_scans/intro_genomes/sel.from_lpa.pdf
+```
 
 
+
+---
+## TESTING TESTING 
+
+To calculate pi along the genome in each population (100kb window size is selected):
+```
+# vcfdir
+vcfdir=/GRUPOS/grupolince/mLynRuf2.2_ref_vcfs
+# refdir
+refdir=/GRUPOS/grupolince/reference_genomes/lynx_rufus_mLynRuf2.2
+# chrs
+chrs=($(cat ${refdir}/autosomic_scaffolds_list.txt))
+
+# species1 - eurasian lynx
+for pop in wel sel; do
+    # vcf
+    ivcf=${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf
+    pop1=data/${pop}.list
+    
+    # divide vcf per population
+    vcftools --vcf $ivcf --keep $pop1 --maf 0.0001 \
+        --recode --recode-INFO-all --out data/introgression_scans/${pop}
+    
+    # calculate pi per population
+    vcftools --vcf data/introgression_scans/${pop}.recode.vcf \
+        --window-pi 100000 --out data/introgression_scans/${pop}
+done
+
+# species2 - iberian lynx
+pop2=data/lpa.list
+
+# divide vcf per population
+vcftools --vcf $ivcf --keep $pop2 --maf 0.0001 \
+    --recode --recode-INFO-all --out data/introgression_scans/lpa
+    
+# calculate pi per population
+vcftools --vcf data/introgression_scans/lpa.recode.vcf \
+    --window-pi 100000 --out data/introgression_scans/lpa
+```
+
+Now to get bed files with 10kb windows along the genome, the probabilities of ab, ba and bi of all windows in the introscans (from the predictions csv) and the pi calculations (pi in 100kb windows):
+```
+# 10kb windows along the genome
+bedtools makewindows -g data/mLynRuf2.2.revcomp.scaffolds.genome -w 10000 |
+    sort -k1,1 -k2,2n > data/introgression_scans/bed_files/tenkb_windows.bed
+
+# windows in introscans
+for pop_pair in lpa-wel lpa-sel; do
+    echo "$pop_pair"
+    grep -v "chrom" data/introgression_scans/${pop_pair}_predictions_withM.csv |
+        cut -d',' -f2,3,4,5 | tr ',' '\t' \
+        > data/introgression_scans/bed_files/${pop_pair}.all_windows.p_ab.bed
+    grep -v "chrom" data/introgression_scans/${pop_pair}_predictions_withM.csv |
+        cut -d',' -f2,3,4,6 | tr ',' '\t' \
+        > data/introgression_scans/bed_files/${pop_pair}.all_windows.p_ba.bed
+    grep -v "chrom" data/introgression_scans/${pop_pair}_predictions_withM.csv |
+        cut -d',' -f2,3,4,7 | tr ',' '\t' \
+        > data/introgression_scans/bed_files/${pop_pair}.all_windows.p_bi.bed
+done
+
+# 100kb windows
+for pop in lpa wel sel; do
+    echo "$pop"
+    grep -v "CHROM" data/introgression_scans/${pop}.windowed.pi |
+        cut -f1,2,3,5 | awk '{print $1, $2-1, $3, $4}' | tr ' ' '\t' \
+        > data/introgression_scans/bed_files/${pop}_diversity.100kb_windows.bed
+done
+```
+
+To get the tables of each genome's (lpa, wel, sel) introgression and diversity:
+```
+# LPA
+bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
+    -b data/introgression_scans/bed_files/lpa_diversity.100kb_windows.bed \
+    -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/lpa.pi.tenkb_windows.bed
+
+bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
+    -b data/introgression_scans/bed_files/lpa-wel.all_windows.p_ab.bed \
+    -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/lpa.welab.tenkb_windows.bed
+
+bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
+    -b data/introgression_scans/bed_files/lpa-wel.all_windows.p_bi.bed \
+    -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/lpa.welbi.tenkb_windows.bed
+
+bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
+    -b data/introgression_scans/bed_files/lpa-sel.all_windows.p_ab.bed \
+    -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/lpa.selab.tenkb_windows.bed
+
+bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
+    -b data/introgression_scans/bed_files/lpa-sel.all_windows.p_bi.bed \
+    -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/lpa.selbi.tenkb_windows.bed
+
+# WEL
+bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
+    -b data/introgression_scans/bed_files/wel_diversity.100kb_windows.bed \
+    -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/wel.pi.tenkb_windows.bed
+
+bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
+    -b data/introgression_scans/bed_files/lpa-wel.all_windows.p_ba.bed \
+    -c 4 -o max | awk '$4 != "." {print}' > data/introgression_scans/bed_files/wel.welba.tenkb_windows.bed
+
+bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
+    -b data/introgression_scans/bed_files/lpa-wel.all_windows.p_bi.bed \
+    -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/wel.welbi.tenkb_windows.bed
+
+# SEL
+    bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
+        -b data/introgression_scans/bed_files/sel_diversity.100kb_windows.bed \
+        -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/sel.pi.tenkb_windows.bed
+
+    bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
+        -b data/introgression_scans/bed_files/lpa-sel.all_windows.p_ba.bed \
+        -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/sel.selba.tenkb_windows.bed
+
+    bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
+        -b data/introgression_scans/bed_files/lpa-sel.all_windows.p_bi.bed \
+        -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/sel.selbi.tenkb_windows.bed
+```
