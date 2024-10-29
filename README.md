@@ -32,4 +32,7 @@ pip uninstall ruamel.yaml
 pip install "ruamel.yaml<0.18.0"
 pip install pandas
 conda install -c conda-forge dadi
+pip install -U scikit-learn
+pip install -U matplotlib
+pip install seaborn
 ```
