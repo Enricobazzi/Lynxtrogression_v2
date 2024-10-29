@@ -19,7 +19,7 @@ conda activate /home/ebazzicalupo/introNets/intronets
 conda create --prefix=/mnt/netapp1/Store_CSIC/home/csic/eye/eba/intronets python=3.9
 conda activate /mnt/netapp1/Store_CSIC/home/csic/eye/eba/intronets
 
-# install stuff:
+# install stuff:
 conda install -c conda-forge mpi4py openmpi
 pip install "numpy<1.25"
 pip install seriate
@@ -53,6 +53,7 @@ Both abba and baab will go into the 'bi' category for the discriminator, but are
 ```
 pop_pair=lpa-wel
 pop_pair=lpa-eel
+pop_pair=lpa-sel
 
 for migration in ab ba bi none; do
     mkdir data/introgression_scans/simulations/${pop_pair}_${migration}_sims/
@@ -60,6 +61,7 @@ done
 
 for model in 12_9 20_7 6_2; do
 for model in 34_7 38_4 30_1; do
+for model in 12_6 18_7 18_10; do
     mkdir data/introgression_scans/simulations/${pop_pair}_ab_sims/${model}/
     mkdir data/introgression_scans/simulations/${pop_pair}_ba_sims/${model}/
     mkdir data/introgression_scans/simulations/${pop_pair}_bi_sims/${model}_abba/
@@ -69,8 +71,9 @@ done
 
 for model in 12_9 20_7 6_2; do
 for model in 34_7 38_4 30_1; do
+for model in 12_6 18_7 18_10; do
     for migration in ab ba none; do
-        python src/introgression_scans/simulate_data_withM.py \
+        python src/introgression_scans/simulate_data.py \
             --demes_yaml data/demographic_inference/${pop_pair}_best_yamls/${pop_pair}_${model}_final_best_model.yaml \
             --confint data/demographic_inference/${pop_pair}_CI/${pop_pair}.${model}.CI.csv \
             --path_to_msmodified src/introNets/msmodified/ms \
@@ -80,10 +83,25 @@ for model in 34_7 38_4 30_1; do
     done
 done
 
+pop_pair=lpa-sel
+migration=none
+conda activate lynxtrogression_v2
+
+for model in 12_6 18_7 18_10; do
+python src/introgression_scans/simulate_data.py \
+    --demes_yaml data/demographic_inference/${pop_pair}_best_yamls/${pop_pair}_${model}_final_best_model.yaml \
+    --confint data/demographic_inference/${pop_pair}_CI/${pop_pair}.${model}.CI.csv \
+    --path_to_msmodified src/introNets/msmodified/ms \
+    --migration ${migration} \
+    --nreps 20000 \
+    --odir data/introgression_scans/simulations/${pop_pair}_${migration}_sims/${model}/
+done
+
 for model in 12_9 20_7 6_2; do
 for model in 34_7 38_4 30_1; do
+for model in 12_6 18_7 18_10; do
     for migration in abba baab; do
-        python src/introgression_scans/simulate_data_withM.py \
+        python src/introgression_scans/simulate_data.py \
             --demes_yaml data/demographic_inference/${pop_pair}_best_yamls/${pop_pair}_${model}_final_best_model.yaml \
             --confint data/demographic_inference/${pop_pair}_CI/${pop_pair}.${model}.CI.csv \
             --path_to_msmodified src/introNets/msmodified/ms \
@@ -100,6 +118,7 @@ I filter out from simulations the ones with < 128 segsites using [filter_sims.py
 ```
 pop_pair=lpa-wel
 pop_pair=lpa-eel
+pop_pair=lpa-sel
 
 for migration in ab ba bi none; do
     mkdir data/introgression_scans/simulations/${pop_pair}_${migration}_filtered_sims/
@@ -107,6 +126,7 @@ done
 
 for model in 12_9 20_7 6_2; do
 for model in 34_7 38_4 30_1; do
+for model in 12_6 18_7 18_10; do
     mkdir data/introgression_scans/simulations/${pop_pair}_ab_filtered_sims/${model}/
     mkdir data/introgression_scans/simulations/${pop_pair}_ba_filtered_sims/${model}/
     mkdir data/introgression_scans/simulations/${pop_pair}_bi_filtered_sims/${model}_abba/
@@ -116,6 +136,7 @@ done
 
 for model in 12_9 20_7 6_2; do
 for model in 34_7 38_4 30_1; do
+for model in 12_6 18_7 18_10; do
     for migration in ab ba none; do
         echo "filtering ${pop_pair}_${migration} of ${model}"
         python src/introgression_scans/filter_sims.py \
@@ -127,6 +148,7 @@ done
 
 for model in 12_9 20_7 6_2; do
 for model in 34_7 38_4 30_1; do
+for model in 12_6 18_7 18_10; do
     for migration in abba baab; do
         echo "filtering ${pop_pair}_${migration} of ${model}"
         python src/introgression_scans/filter_sims.py \
@@ -155,24 +177,36 @@ pop_sizes="24,44"
 
 mkdir data/introgression_scans/simulations/${pop_pair}_hdf5s
 
+conda activate ~/introNets/intronets
+pop_pair=lpa-sel
+pop_sizes="24,44"
 mpirun -n 4 python src/introNets/src/data/format.py \
     --verbose \
     --idir data/introgression_scans/simulations/${pop_pair}_ab_filtered_sims/ \
     --ofile data/introgression_scans/simulations/${pop_pair}_hdf5s/${pop_pair}_ab.hdf5 \
     --pop_sizes ${pop_sizes} --out_shape 2,44,128 --pop 1 |& tee logs/introgression_scans/format_${pop_pair}_ab.log
 
+conda activate ~/introNets/intronets
+pop_pair=lpa-sel
+pop_sizes="24,44"
 mpirun -n 4 python src/introNets/src/data/format.py \
     --verbose \
     --idir data/introgression_scans/simulations/${pop_pair}_ba_filtered_sims/ \
     --ofile data/introgression_scans/simulations/${pop_pair}_hdf5s/${pop_pair}_ba.hdf5 \
     --pop_sizes ${pop_sizes} --out_shape 2,44,128 --pop 0 |& tee logs/introgression_scans/format_${pop_pair}_ba.log
 
+conda activate ~/introNets/intronets
+pop_pair=lpa-sel
+pop_sizes="24,44"
 mpirun -n 4 python src/introNets/src/data/format.py \
     --verbose \
     --idir data/introgression_scans/simulations/${pop_pair}_bi_filtered_sims/ \
     --ofile data/introgression_scans/simulations/${pop_pair}_hdf5s/${pop_pair}_bi.hdf5 \
     --pop_sizes ${pop_sizes} --out_shape 2,44,128 --pop -1 |& tee logs/introgression_scans/format_${pop_pair}_bi.log
 
+conda activate ~/introNets/intronets
+pop_pair=lpa-sel
+pop_sizes="24,44"
 mpirun -n 4 python src/introNets/src/data/format.py \
     --verbose \
     --idir data/introgression_scans/simulations/${pop_pair}_none_filtered_sims/ \
@@ -221,6 +255,16 @@ pop_pair=lpa-eel
 taskset -c 11,12,13,14,15,16,17,18,19,20 \
     python src/introNets/src/models/train_discriminator.py \
         --idir data/introgression_scans/simulations/${pop_pair}_hdf5s/ --odir data/introgression_scans/${pop_pair}_discriminator/ --n_classes 4
+
+pop_pair=lpa-sel
+script logs/introgression_scans/${pop_pair}_train_disc.log
+conda activate ~/introNets/intronets
+pop_pair=lpa-sel
+mkdir data/introgression_scans/${pop_pair}_discriminator/
+taskset -c 1,2,3,4,5,6,7,8,9,10 \
+    python src/introNets/src/models/train_discriminator.py \
+        --idir data/introgression_scans/simulations/${pop_pair}_hdf5s/ --odir data/introgression_scans/${pop_pair}_discriminator/ --n_classes 4
+
 ```
 
 ## Evaluate the discriminator
@@ -247,14 +291,14 @@ vcfFileName=${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.
 species1ListFileName=data/${pop}.list
 # species2 - iberian lynx
 species2ListFileName=data/lpa.list
-# reference genome (masked if needed - not our case)
+# reference genome (masked if needed - not our case)
 maskedRefFileName=${refdir}/mLynRuf2.2.revcomp.scaffolds.fa
 
 for chr in ${chrs[@]}; do
-    # output file
+    # output file
     npzFileName=data/introgression_scans/npz_files/lpa-${pop}.${chr}.npz
     echo "generating ${npzFileName}"
-    # run script
+    # run script
     python src/introgression_scans/phasedVcfToNpz.py \
         $vcfFileName $species1ListFileName $species2ListFileName $maskedRefFileName $chr $npzFileName
 done
@@ -317,6 +361,8 @@ conda activate ~/introNets/intronets
 pop_pair=lpa-sel
 pop_sizes="24,44"
 
+mkdir data/introgression_scans/lpa-${pop}_predictions/
+
 chr=mLynRuf2.2_ChrA1
 chr=mLynRuf2.2_ChrC1
 chr=mLynRuf2.2_ChrB1
@@ -360,13 +406,15 @@ vcfdir=/GRUPOS/grupolince/mLynRuf2.2_ref_vcfs
 # eurasian pop
 pop=wel
 pop=eel
+pop=sel
 # ivcf
 ivcf=${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf
 
 mkdir data/introgression_scans/lpa-${pop}_vcf_fastas/
 
 for chr in ${chrs[@]}; do
-    # mkdir data/introgression_scans/lpa-${pop}_vcf_fastas/${chr}
+    echo "fastas of ${chr}"
+    mkdir data/introgression_scans/lpa-${pop}_vcf_fastas/${chr}
     python src/introgression_scans/write_fastas_from_vcf.py \
         --ivcf ${ivcf} \
         --chr ${chr} \
@@ -398,7 +446,7 @@ mkdir data/introgression_scans/lpa-${pop}_binary_fastas/
 
 for chr in ${chrs[@]}; do
     echo "writing binary fastas of ${chr}"
-    mkdir data/introgression_scans/lpa-${pop}_binary_fastas/${chr}
+    # mkdir data/introgression_scans/lpa-${pop}_binary_fastas/${chr}
     python src/introNets/src/models/write_binary_fastas_from_npz.py \
         --ifile data/introgression_scans/npz_files/lpa-${pop}.${chr}.npz \
         --odir data/introgression_scans/lpa-${pop}_binary_fastas/${chr} \
@@ -417,6 +465,7 @@ vcfdir=/GRUPOS/grupolince/mLynRuf2.2_ref_vcfs
 # eurasian pop
 pop=wel
 pop=eel
+pop=sel
 # ivcf
 ivcf=${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf
 
@@ -431,6 +480,7 @@ Merge consecutive windows
 ```
 pop=wel
 pop=eel
+pop=sel
 
 ls data/introgression_scans/lpa-${pop}_predictions/*095.bed
 
@@ -459,18 +509,23 @@ bedtools merge \
 ```
 pop=wel
 pop=eel
+pop=sel
 
 awk '{sum += $3 - $2} END {print sum}' data/introgression_scans/lpa-${pop}_predictions/ab_introgressed_095.merged.bed
 awk '{sum += $3 - $2} END {print sum}' data/introgression_scans/lpa-${pop}_predictions/ba_introgressed_095.merged.bed
 awk '{sum += $3 - $2} END {print sum}' data/introgression_scans/lpa-${pop}_predictions/bi_introgressed_095.merged.bed
 
-# wel ab = 172664011 / 2285572469 ~7%  191267431
-# wel ba = 196112677 / 2285572469 ~8%  112993394
-# wel bi = 13383002 / 2285572469 ~0.5%  5230417
+# wel ab = 166847030 / 2285572469 0.07300010490282118
+# wel ba = 210690912 / 2285572469 0.09218299347654595
+# wel bi = 12551816 / 2285572469 0.00549176023523409
 
-# eel ab = 567142103 / 2285572469 0.24814006586636042
-# eel ba = 160027805 / 2285572469 0.07001650884866342
-# eel bi = 21760105 / 2285572469 0.009520636643615434
+# eel ab = 802575019 / 2285572469 0.3511483577465161
+# eel ba = 180822320 / 2285572469 0.07911467365509293
+# eel bi = 13741216 / 2285572469 0.006012155023031125
+
+# sel ab = 332352367 / 2285572469 0.1454131826961554
+# sel ba = 148605256 / 2285572469 0.06501883358133852
+# sel bi = 5604069 / 2285572469 0.0024519323171808822
 ```
 ### Get genes and enrichment:
 
@@ -567,26 +622,32 @@ vcfdir=/GRUPOS/grupolince/mLynRuf2.2_ref_vcfs
 refdir=/GRUPOS/grupolince/reference_genomes/lynx_rufus_mLynRuf2.2
 # chrs
 chrs=($(cat ${refdir}/autosomic_scaffolds_list.txt))
-# eurasian pop
-pop=wel
-# vcf
-ivcf=${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf
+
 # species1 - eurasian lynx
-pop1=data/${pop}.list
+for pop in wel sel; do
+    # vcf
+    ivcf=${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf
+    pop1=data/${pop}.list
+    
+    # divide vcf per population
+    vcftools --vcf $ivcf --keep $pop1 --maf 0.0001 \
+        --recode --recode-INFO-all --out data/introgression_scans/${pop}
+    
+    # calculate pi per population
+    vcftools --vcf data/introgression_scans/${pop}.recode.vcf \
+        --window-pi 100000 --out data/introgression_scans/${pop}
+done
+
 # species2 - iberian lynx
 pop2=data/lpa.list
 
 # divide vcf per population
-vcftools --vcf $ivcf --keep $pop1 --maf 0.0001 \
-    --recode --recode-INFO-all --out data/introgression_scans/${pop}
 vcftools --vcf $ivcf --keep $pop2 --maf 0.0001 \
     --recode --recode-INFO-all --out data/introgression_scans/lpa
-
+    
 # calculate pi per population
-vcftools --vcf data/introgression_scans/${pop}.recode.vcf \
-    --window-pi 10000 --out data/introgression_scans/${pop}
 vcftools --vcf data/introgression_scans/lpa.recode.vcf \
-    --window-pi 10000 --out data/introgression_scans/lpa
+    --window-pi 100000 --out data/introgression_scans/lpa
 ```
 
 
