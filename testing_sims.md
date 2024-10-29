@@ -114,13 +114,15 @@ done
 
 SIM DATA
 ```
-mtime=5000
+mtime=10000
 
-for pop_pair in lpa-wel lpa-eel; do
+for pop_pair in lpa-wel lpa-eel lpa-sel; do
     if [ ${pop_pair} == 'lpa-wel' ]; then
         models=(12_9 6_2 20_7)
     elif [ ${pop_pair} == 'lpa-eel' ]; then
         models=(34_7 38_4 30_1)
+    elif [ ${pop_pair} == 'lpa-sel' ]; then
+        models=(12_6 18_7 18_10)
     fi
     for model in ${models[@]}; do
         for migration in ab ba none; do
@@ -143,11 +145,13 @@ done
 FILTER SIMS
 ```
 mtime=5000
-for pop_pair in lpa-wel lpa-eel; do
+for pop_pair in lpa-wel lpa-eel lpa-sel; do
     if [ ${pop_pair} == 'lpa-wel' ]; then
         models=(12_9 6_2 20_7)
     elif [ ${pop_pair} == 'lpa-eel' ]; then
         models=(34_7 38_4 30_1)
+    elif [ ${pop_pair} == 'lpa-sel' ]; then
+        models=(12_6 18_7 18_10)
     fi
     for model in ${models[@]}; do
         for migration in ab ba none; do
@@ -166,15 +170,18 @@ done
 MAKE HDF5
 ```
 conda activate ~/introNets/intronets
-mtime=5000
+mtime=10000
 
-for pop_pair in lpa-wel lpa-eel; do
+for pop_pair in lpa-wel lpa-eel lpa-sel; do
     if [ ${pop_pair} == 'lpa-wel' ]; then
         models=(12_9 6_2 20_7)
         pop_sizes="40,44"
     elif [ ${pop_pair} == 'lpa-eel' ]; then
         models=(34_7 38_4 30_1)
         pop_sizes="38,44"
+    elif [ ${pop_pair} == 'lpa-sel' ]; then
+        models=(12_6 18_7 18_10)
+        pop_sizes="24,44"
     fi
     for model in ${models[@]}; do
         echo "testing_sims/${pop_pair}_${migration}_sims/${model}_${mtime}_fil/"
@@ -203,16 +210,19 @@ done
 GET FASTA
 ```
 conda activate ~/introNets/intronets
-mtime=5000
+mtime=10000
 mkdir testing_sims/fastas/
 
-for pop_pair in lpa-wel lpa-eel; do
+for pop_pair in lpa-wel lpa-eel lpa-sel; do
     if [ ${pop_pair} == 'lpa-wel' ]; then
         models=(12_9 6_2 20_7)
         pop_sizes="40,44"
     elif [ ${pop_pair} == 'lpa-eel' ]; then
         models=(34_7 38_4 30_1)
         pop_sizes="38,44"
+    elif [ ${pop_pair} == 'lpa-sel' ]; then
+        models=(12_6 18_7 18_10)
+        pop_sizes="24,44"
     fi
     for model in ${models[@]}; do
         for migration in ab ba none; do
@@ -349,7 +359,7 @@ for pop_pair in lpa-wel lpa-eel; do
 done
 ```
 
-### Sim with recent but low prop migration
+### Sim with fixed mig proportion
 
 ```
 mkdir testing_sims_fix
@@ -358,7 +368,7 @@ conda activate lynxtrogression_v2
 
 SIM DATA
 ```
-mtime=5000
+mtime=10000
 
 for pop_pair in lpa-wel lpa-eel; do
     if [ ${pop_pair} == 'lpa-wel' ]; then
@@ -376,7 +386,7 @@ for pop_pair in lpa-wel lpa-eel; do
                 --confint data/demographic_inference/${pop_pair}_CI/${pop_pair}.${model}.CI.csv \
                 --path_to_msmodified src/introNets/msmodified/ms \
                 --migration ${migration} \
-                --nreps 30 \
+                --nreps 20 \
                 --odir testing_sims_fix/${pop_pair}_${migration}_sims/${model}_${mtime} \
                 --mtime ${mtime}
         done
@@ -386,7 +396,7 @@ done
 
 FILTER SIMS
 ```
-mtime=5000
+mtime=10000
 for pop_pair in lpa-wel lpa-eel; do
     if [ ${pop_pair} == 'lpa-wel' ]; then
         models=(12_9 6_2 20_7)
@@ -401,7 +411,7 @@ for pop_pair in lpa-wel lpa-eel; do
             python src/introgression_scans/filter_sims.py \
                 --idir testing_sims_fix/${pop_pair}_${migration}_sims/${model}_${mtime}/ \
                 --odir testing_sims_fix/${pop_pair}_${migration}_sims/${model}_${mtime}_fil/sims \
-                --n_sites 128 --n_sims 15
+                --n_sites 128 --n_sims 10
         done
     done
 done
@@ -410,7 +420,7 @@ done
 MAKE HDF5
 ```
 conda activate ~/introNets/intronets
-mtime=5000
+mtime=10000
 
 for pop_pair in lpa-wel lpa-eel; do
     if [ ${pop_pair} == 'lpa-wel' ]; then
@@ -447,7 +457,7 @@ done
 GET FASTA
 ```
 conda activate ~/introNets/intronets
-mtime=5000
+mtime=10000
 mkdir testing_sims_fix/fastas/
 
 for pop_pair in lpa-wel lpa-eel; do
