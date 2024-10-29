@@ -30,15 +30,36 @@ data/demographic_inference/lpa-*.recode.vcf
 data/demographic_inference/lpa-*.pruned.log
 data/demographic_inference/lpa-*.popmap.txt
 data/demographic_inference/lpa-wel_*
+data/demographic_inference/lpa-eel_*
+data/demographic_inference/lpa-sel_*
+
+# data
+data/genes.bed
+data/LYRU2_2A.*
+data/mLynRuf2.2.*
+data/introgression_scans/lpa-wel_*
+data/introgression_scans/lpa-sel_*
+data/introgression_scans/lpa-eel_*
 
 # testing notebook
 tester.ipynb
 tester.Rmd
+tester.R
 
+fastis/
 minitest/
 fastas/
 fake_fastas/
-data/introgression_scans/lpa-wel_vcf_fastas/
+# data/introgression_scans/lpa-wel_vcf_fastas/
+# data/introgression_scans/lpa-wel_randomwins/
+# data/introgression_scans/lpa-wel_predictions/
+data/introgression_scans/bed_files/
+data/introgression_scans/evaluation_withM/
+testing_sims_fastas
+testing_sims_withM_fastas
+testing_sims_fix_fastas
+testing_sims
+testing_sims_withM
 
 # R stuff
 .Rproj.user
@@ -47,6 +68,8 @@ Lynxtrogression_v2.Rproj
 
 # presentation
 presentation.key
+models.key
+models.pdf
 
 # plots
 plots/
