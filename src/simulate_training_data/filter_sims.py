@@ -2,18 +2,24 @@
 import gzip
 import argparse
 import os
+import numpy as np
 
 argparser = argparse.ArgumentParser('filter msOut and anc files')
 argparser.add_argument('--idir', type=str, help='input directory with msOut and anc files')
 argparser.add_argument('--odir', type=str, help='output directory for filtered msOut and anc files')
 argparser.add_argument('--n_sites', type=int, help='minimum number of segregating sites')
 argparser.add_argument('--n_sims', type=int, help='total number of simulations to keep')
+argparser.add_argument('--pop_sizes', type=str, help='comma separated list of population sizes')
+argparser.add_argument('--migration', type=str, help='ab, ba, bi or none')
 args = argparser.parse_args()
 
 idir = args.idir
 odir = args.odir
 n_sites = args.n_sites
 n_sims = args.n_sims
+pop_sizes = args.pop_sizes
+pop_sizes = tuple(list(map(int, pop_sizes.split(','))))
+migration = args.migration
 
 print(f'Filtering msOut and anc files in {idir}')
 print(f'Keeping simulations with at least {n_sites} segregating sites')
@@ -91,6 +97,64 @@ def get_anc_blocks(anc, segsites):
         current_line = end_index
     return anc_blocks
 
+def get_ws_we(anc_block, n_sites, migration, pop_sizes):
+    """
+    Get the start and end of the window in the anc block. At least 1 site has to be introgressed in the window.
+    Migration direction and population sizes are needed to determine introgression happening in the window.
+    Try 20 times before giving up.
+    """
+    # get start positions of windows
+    starts = [n for n in range(0, len(anc_block), n_sites)]
+    # if the last window is not complete, change it to start before
+    if len(anc_block) - starts[-1] < n_sites:
+        starts[-1] = len(anc_block) - n_sites
+    for _ in range(20):
+        # choose a random window
+        ws = np.random.choice(starts)
+        we = ws + n_sites
+        # check if there is introgression in the window
+        if migration == 'ab':
+            c = [line.strip()[pop_sizes[0]:].count('1') for line in anc_block[ws:we]]
+            c = sum(c)
+        elif migration == 'ba':
+            c = [line.strip()[:pop_sizes[0]].count('1') for line in anc_block[ws:we]]
+            c = sum(c)
+        elif migration == 'bi':
+            c = [line.strip().count('1') for line in anc_block[ws:we]]
+            c = sum(c)
+        elif migration == 'none':
+            c = 1
+        if c > 0:
+            return ws, we
+    return None, None
+
+def filter_anc_block(anc_block, ws, we):
+    """
+    Filter the anc block to only include the window of interest
+    """
+    return anc_block[ws:we]
+
+def filter_ms_block(ms_block, ws, we):
+    """
+    Filter the ms block to only include the window of interest
+    """
+    # modify the positions line of the ms block
+    positions = []
+    positions.append('positions:')
+    for p in ms_block[2].split('  ')[ws+1:we+1]:
+        positions.append(p)
+    filtered_ms_block = []
+    for n, line in enumerate(ms_block):
+        if n == 0:
+            filtered_ms_block.append(line)
+        elif n == 1:
+            filtered_ms_block.append(f'segsites: {n_sites}\n')
+        elif n == 2:
+            filtered_ms_block.append(f"{'  '.join(positions)}\n")
+        else:
+            filtered_ms_block.append(f'{line[ws:we]}\n')
+    return filtered_ms_block
+
 # get the files
 msout = f'{idir}/mig.msOut.gz'
 anc = f'{idir}/out.anc.gz'
@@ -111,8 +175,12 @@ ms_blocks_filtered = []
 anc_blocks_filtered = []
 for s, block, anc_block in zip(segsites, ms_blocks, anc_blocks):
     if s >= n_sites:
-        ms_blocks_filtered.append(block)
-        anc_blocks_filtered.append(anc_block)
+        ws, we = get_ws_we(anc_blocks[0], n_sites, migration, pop_sizes)
+        if ws:
+            block = filter_ms_block(block, ws, we)
+            anc_block = filter_anc_block(anc_block, ws, we)
+            ms_blocks_filtered.append(block)
+            anc_blocks_filtered.append(anc_block)
     if len(ms_blocks_filtered) == n_sims:
         break
 

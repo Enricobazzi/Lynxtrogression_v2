@@ -101,7 +101,7 @@ def get_ms_command(graph, N0, samples, mu, L, rec, migration, mtime):
         mig_time = random.uniform(0, mtime)
         mig_time = mig_time / N0 / 4
         # mig_prop = random.uniform(0.01, 0.3)
-        mig_prop = 0.90
+        mig_prop = 0.95
         mscommand += f' -es {mig_time} 1 {mig_prop} -ej {mig_time} 3 2'
     elif migration == "ab":
         # t_split = graph.demes[1].start_time
@@ -109,7 +109,7 @@ def get_ms_command(graph, N0, samples, mu, L, rec, migration, mtime):
         mig_time = random.uniform(0, mtime)
         mig_time = mig_time / N0 / 4
         # mig_prop = random.uniform(0.01, 0.3)
-        mig_prop = 0.90
+        mig_prop = 0.95
         mscommand += f' -es {mig_time} 2 {mig_prop} -ej {mig_time} 3 1'
     elif migration == "abba":
         # t_split = graph.demes[1].start_time
@@ -120,9 +120,9 @@ def get_ms_command(graph, N0, samples, mu, L, rec, migration, mtime):
         mig_time1 = min(mt1, mt2) / N0 / 4
         mig_time2 = max(mt1, mt2) / N0 / 4
         # mig_prop1 = random.uniform(0.01, 0.3)
-        mig_prop1 = 0.90
+        mig_prop1 = 0.95
         # mig_prop2 = random.uniform(0.01, 0.3)
-        mig_prop2 = 0.90
+        mig_prop2 = 0.95
         mscommand += f' -es {mig_time1} 2 {mig_prop1} -ej {mig_time1} 3 1 -es {mig_time2} 1 {mig_prop2} -ej {mig_time2} 4 2'
     elif migration == "baab":
         # t_split = graph.demes[1].start_time
@@ -133,9 +133,9 @@ def get_ms_command(graph, N0, samples, mu, L, rec, migration, mtime):
         mig_time1 = min(mt1, mt2) / N0 / 4
         mig_time2 = max(mt1, mt2) / N0 / 4
         # mig_prop1 = random.uniform(0.01, 0.3)
-        mig_prop1 = 0.90
+        mig_prop1 = 0.95
         # mig_prop2 = random.uniform(0.01, 0.3)
-        mig_prop2 = 0.90
+        mig_prop2 = 0.95
         mscommand += f' -es {mig_time1} 1 {mig_prop1} -ej {mig_time1} 3 2 -es {mig_time2} 2 {mig_prop2} -ej {mig_time2} 4 1'
     elif migration == "none":
         mscommand += f' -es 0.0001 1 1.0 -ej 0.0001 3 2'
