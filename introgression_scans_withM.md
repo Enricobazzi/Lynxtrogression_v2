@@ -475,38 +475,22 @@ python src/introNets/src/models/apply_disc_eb.py \
 
 Since there is a problem when generating the hdf5 file from npz data, until it's fixed I will use different script, [apply_disc_to_npz.py](src/introgression_scans/apply_disc_to_npz.py), that applies the model directly to the NPZ. This is not ideal since it's much slower in sorting the haplotypes in the windows because it's not being parallelized as in `format_npz.py`. I use it until the other is fixed. I placed a copy of it in the `src/models/` folder of introNets so it can load the model properly.
 
+Create folders to store the results:
 ```
-conda activate ~/introNets/intronets
-pop_pair=lpa-wel
+for pop in wel sel; do
+    mkdir data/introgression_scans/lpa-${pop}_predictions/
+done
+```
+
+To run the script, define the eurasian lynx population name, population sizes and the chromosome name first:
+```
+# for example for lpa-wel chromosome A1:
+pop=wel
 pop_sizes="40,44"
-conda activate ~/introNets/intronets
-pop_pair=lpa-eel
-pop_sizes="38,44"
-conda activate ~/introNets/intronets
-pop_pair=lpa-sel
-pop_sizes="24,44"
-
-mkdir data/introgression_scans/lpa-${pop}_predictions/
-
 chr=mLynRuf2.2_ChrA1
-chr=mLynRuf2.2_ChrC1
-chr=mLynRuf2.2_ChrB1
-chr=mLynRuf2.2_ChrA2_rc
-chr=mLynRuf2.2_ChrC2
-chr=mLynRuf2.2_ChrB2_rc
-chr=mLynRuf2.2_ChrB3
-chr=mLynRuf2.2_ChrB4_rc
-chr=mLynRuf2.2_ChrA3_rc
-chr=mLynRuf2.2_ChrD1
-chr=mLynRuf2.2_ChrD4
-chr=mLynRuf2.2_ChrD3
-chr=mLynRuf2.2_ChrD2
-chr=mLynRuf2.2_ChrF2
-chr=mLynRuf2.2_ChrF1_rc
-chr=mLynRuf2.2_ChrE2_rc
-chr=mLynRuf2.2_ChrE1
-chr=mLynRuf2.2_ChrE3_rc
-
+```
+Then run the command (taskset is used to only occupy core #1 in the interactive cluster):
+```
 taskset -c 1 python src/introNets/src/models/apply_disc_to_npz.py \
     --ifile data/introgression_scans/npz_files/lpa-${pop}.${chr}.npz \
     --ofile data/introgression_scans/lpa-${pop}_predictions_withM/${chr}.predictions.csv \
@@ -517,6 +501,8 @@ taskset -c 1 python src/introNets/src/models/apply_disc_to_npz.py \
     --in_channels 2 \
     --n_classes 4
 ```
+
+Or see [apply_disc_screens.sh](src/introgression_scans/apply_disc_screens.sh) script to have every chromosome separately.
 
 ## Create fastas from VCF to check predictions
 
@@ -590,7 +576,7 @@ I use the [get_intro_and_predbeds.py](src/introgression_scans/get_intro_and_pred
 
 I use bedtools to merge consecutive windows in these bed files and create two additional bed files. One has the regions in lpa that have introgression from both wel and sel. The other has the regions that have introgression from lpa in both wel and sel.
 ```
-# autosome length : cat mLynRuf2.2.revcomp.scaffolds.fa.fai | grep "Chr" | grep -vE "ChrX|ChrY" | awk '{sum +=$2} END {print sum}' = 2285572469
+# autosome length : cat mLynRuf2.2.revcomp.scaffolds.fa.fai | grep "Chr" | grep -vE "ChrX|ChrY" | awk '{sum +=$2} END {print sum}' = 2285572469
 for bed in $(ls data/introgression_scans/bed_files/*_intro.bed); do
     base=$(basename -s '.bed' ${bed})
     echo "${base}:"
@@ -635,21 +621,21 @@ bedtools intersect \
     -b data/introgression_scans/bed_files/wel_to_lpa_intro.merged.bed \
     > data/introgression_scans/bed_files/wel_and_sel_to_lpa_intro.intersect.bed
 echo "$(awk '{sum += $3 - $2} END {print sum}' data/introgression_scans/bed_files/wel_and_sel_to_lpa_intro.intersect.bed) / 2285572469" | bc -l
-# 0.03634004571132240042
+# 0.03634004571132240042
 
 bedtools merge \
     -i <(cat data/introgression_scans/bed_files/sel_to_lpa_intro.merged.bed data/introgression_scans/bed_files/wel_to_lpa_intro.merged.bed | sort -k1,1 -k2,2n) \
-    > data/introgression_scans/bed_files/wel_and_sel_to_lpa_intro.merge.bed
-echo "$(awk '{sum += $3 - $2} END {print sum}' data/introgression_scans/bed_files/wel_and_sel_to_lpa_intro.merge.bed) / 2285572469" | bc -l
-# 0.06522003831504850000
+    > data/introgression_scans/bed_files/wel_and_sel_to_lpa_intro.merged.bed
+echo "$(awk '{sum += $3 - $2} END {print sum}' data/introgression_scans/bed_files/wel_and_sel_to_lpa_intro.merged.bed) / 2285572469" | bc -l
+# 0.06522003831504850000
 ```
 
-## Introgression and diversity along the chromosomes
+## Introgression along the chromosomes
 
 To plot introgressed windows in each genome:
 ```
 python src/introgression_scans/plot_chroms_intro.py \
-    --ibed data/introgression_scans/bed_files/wel_and_sel_to_lpa_intro.merge.bed \
+    --ibed data/introgression_scans/bed_files/wel_and_sel_to_lpa_intro.merged.bed \
     --ofile plots/introgression_scans/intro_genomes/lpa.from_both.pdf
 
 python src/introgression_scans/plot_chroms_intro.py \
@@ -661,122 +647,162 @@ python src/introgression_scans/plot_chroms_intro.py \
     --ofile plots/introgression_scans/intro_genomes/sel.from_lpa.pdf
 ```
 
-
-
----
-## TESTING TESTING 
-
-To calculate pi along the genome in each population (100kb window size is selected):
+To plot the relationship between introgression amount and chromosome length:
 ```
-# vcfdir
-vcfdir=/GRUPOS/grupolince/mLynRuf2.2_ref_vcfs
-# refdir
-refdir=/GRUPOS/grupolince/reference_genomes/lynx_rufus_mLynRuf2.2
-# chrs
-chrs=($(cat ${refdir}/autosomic_scaffolds_list.txt))
+python src/introgression_scans/plot_chrlen_vs_intro.py
+```
 
-# species1 - eurasian lynx
-for pop in wel sel; do
-    # vcf
-    ivcf=${vcfdir}/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-${pop}.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf
-    pop1=data/${pop}.list
-    
-    # divide vcf per population
-    vcftools --vcf $ivcf --keep $pop1 --maf 0.0001 \
-        --recode --recode-INFO-all --out data/introgression_scans/${pop}
-    
-    # calculate pi per population
-    vcftools --vcf data/introgression_scans/${pop}.recode.vcf \
-        --window-pi 100000 --out data/introgression_scans/${pop}
+## Make random windows dataset: overlap with genes, diversity, distance to centromere, distance to telomere
+
+### Create random windows
+
+For each introgressed window in each introgression scenario take a random window of the same size from the genome and create a new bed:
+```
+genome=data/mLynRuf2.2.revcomp.scaffolds.genome
+
+for intro in lpa_to_wel lpa_to_sel wel_to_lpa sel_to_lpa wel_and_sel_to_lpa; do
+    intro_bed=data/introgression_scans/bed_files/${intro}_intro.merged.bed
+    mkdir data/introgression_scans/${intro}_randomwins/
+    for n in {0..99}; do
+        echo "${intro}: ${n}"
+        out_bed=data/introgression_scans/${intro}_randomwins/random_windows.${n}.bed
+        while IFS= read -r line; do
+            wsize=$(awk '{sum += $3 - $2} END {print sum}' <(echo "$line"))
+            bedtools random -g ${genome} -n 1 -l ${wsize} >> ${out_bed}
+        done < "$intro_bed"
+    done
 done
+```
 
-# species2 - iberian lynx
-pop2=data/lpa.list
+### Nucleotide diversity: random vs observed
 
-# divide vcf per population
-vcftools --vcf $ivcf --keep $pop2 --maf 0.0001 \
+Calculate nucleotide diversity in 20kb windows along the genome of LPA, WEL and SEL using vcftools --window-pi 20000
+```
+# get vcf of each population
+vcftools --vcf data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-wel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf \
+    --keep data/lpa.list --maf 0.0001 \
     --recode --recode-INFO-all --out data/introgression_scans/lpa
-    
-# calculate pi per population
-vcftools --vcf data/introgression_scans/lpa.recode.vcf \
-    --window-pi 100000 --out data/introgression_scans/lpa
-```
 
-Now to get bed files with 10kb windows along the genome, the probabilities of ab, ba and bi of all windows in the introscans (from the predictions csv) and the pi calculations (pi in 100kb windows):
-```
-# 10kb windows along the genome
-bedtools makewindows -g data/mLynRuf2.2.revcomp.scaffolds.genome -w 10000 |
-    sort -k1,1 -k2,2n > data/introgression_scans/bed_files/tenkb_windows.bed
+vcftools --vcf data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-wel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf \
+    --keep data/wel.list --maf 0.0001 \
+    --recode --recode-INFO-all --out data/introgression_scans/wel
 
-# windows in introscans
-for pop_pair in lpa-wel lpa-sel; do
-    echo "$pop_pair"
-    grep -v "chrom" data/introgression_scans/${pop_pair}_predictions_withM.csv |
-        cut -d',' -f2,3,4,5 | tr ',' '\t' \
-        > data/introgression_scans/bed_files/${pop_pair}.all_windows.p_ab.bed
-    grep -v "chrom" data/introgression_scans/${pop_pair}_predictions_withM.csv |
-        cut -d',' -f2,3,4,6 | tr ',' '\t' \
-        > data/introgression_scans/bed_files/${pop_pair}.all_windows.p_ba.bed
-    grep -v "chrom" data/introgression_scans/${pop_pair}_predictions_withM.csv |
-        cut -d',' -f2,3,4,7 | tr ',' '\t' \
-        > data/introgression_scans/bed_files/${pop_pair}.all_windows.p_bi.bed
-done
+vcftools --vcf data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-sel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf \
+    --keep data/sel.list --maf 0.0001 \
+    --recode --recode-INFO-all --out data/introgression_scans/sel
 
-# 100kb windows
+# calculate pi in each population
 for pop in lpa wel sel; do
-    echo "$pop"
+    vcftools --vcf data/introgression_scans/${pop}.recode.vcf \
+        --window-pi 20000 --out data/introgression_scans/${pop}
+
     grep -v "CHROM" data/introgression_scans/${pop}.windowed.pi |
         cut -f1,2,3,5 | awk '{print $1, $2-1, $3, $4}' | tr ' ' '\t' \
-        > data/introgression_scans/bed_files/${pop}_diversity.100kb_windows.bed
+        > data/introgression_scans/${pop}.windowed.pi.bed
 done
 ```
 
-To get the tables of each genome's (lpa, wel, sel) introgression and diversity:
+Calculate mean pi in each introgression window of each receiving population and each random window with bedtools map:
 ```
-# LPA
-bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
-    -b data/introgression_scans/bed_files/lpa_diversity.100kb_windows.bed \
-    -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/lpa.pi.tenkb_windows.bed
+for intro in lpa_to_wel lpa_to_sel wel_to_lpa sel_to_lpa wel_and_sel_to_lpa; do
+    intro_bed=data/introgression_scans/bed_files/${intro}_intro.merged.bed
+    pop=$(echo $intro | rev | cut -d'_' -f1 | rev)
+    echo ${pop}
+    bedtools map -a ${intro_bed} \
+        -b data/introgression_scans/${pop}.windowed.pi.bed \
+        -c 4 -o mean | awk '$4 != "." {print}' \
+        > data/introgression_scans/bed_files/${intro}_intro.merged.diversity.bed
+    for n in {0..99}; do
+        intro_bed=data/introgression_scans/${intro}_randomwins/random_windows.${n}.bed
+        bedtools map -a <(sort -k 1,1 -k2,2n ${intro_bed} | cut -f1,2,3) \
+            -b data/introgression_scans/${pop}.windowed.pi.bed \
+            -c 4 -o mean | awk '$4 != "." {print}' \
+            > data/introgression_scans/${intro}_randomwins/random_windows.${n}.diversity.bed
+    done
+done
+```
 
-bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
-    -b data/introgression_scans/bed_files/lpa-wel.all_windows.p_ab.bed \
-    -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/lpa.welab.tenkb_windows.bed
+### Distance to centromere and telomere: random vs observed
 
-bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
-    -b data/introgression_scans/bed_files/lpa-wel.all_windows.p_bi.bed \
-    -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/lpa.welbi.tenkb_windows.bed
+Find distance from centromere and closest telomere of introgressed windows and random ones of same size using custom python script:
+```
+ct_file=data/mLynRuf2.2.revcomp.scaffolds.centromeres
 
-bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
-    -b data/introgression_scans/bed_files/lpa-sel.all_windows.p_ab.bed \
-    -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/lpa.selab.tenkb_windows.bed
+for intro in lpa_to_wel lpa_to_sel wel_to_lpa sel_to_lpa wel_and_sel_to_lpa; do
+    echo "${intro}"
+    intro_bed=data/introgression_scans/bed_files/${intro}_intro.merged.bed
+    python src/introgression_scans/write_cdist_and_tdist_beds.py \
+        --ibed ${intro_bed} \
+        --ct_file ${ct_file} \
+        --otfile data/introgression_scans/bed_files/${intro}_intro.merged.t_dist.bed \
+        --ocfile data/introgression_scans/bed_files/${intro}_intro.merged.c_dist.bed
+    for n in {0..99}; do
+        intro_bed=data/introgression_scans/${intro}_randomwins/random_windows.${n}.bed
+        python src/introgression_scans/write_cdist_and_tdist_beds.py \
+            --ibed <(sort -k 1,1 -k2,2n ${intro_bed} | cut -f1,2,3) \
+            --ct_file ${ct_file} \
+            --otfile data/introgression_scans/${intro}_randomwins/random_windows.${n}.t_dist.bed \
+            --ocfile data/introgression_scans/${intro}_randomwins/random_windows.${n}.c_dist.bed
+    done
+done
+```
 
-bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
-    -b data/introgression_scans/bed_files/lpa-sel.all_windows.p_bi.bed \
-    -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/lpa.selbi.tenkb_windows.bed
+### Overlap with genes: random vs observed
 
-# WEL
-bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
-    -b data/introgression_scans/bed_files/wel_diversity.100kb_windows.bed \
-    -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/wel.pi.tenkb_windows.bed
+Find amount of overlapping base pairs with annotated genes and either introgressed windows or random ones of same size using bedtools intersect:
+```
+genes_bed=data/genes.bed
 
-bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
-    -b data/introgression_scans/bed_files/lpa-wel.all_windows.p_ba.bed \
-    -c 4 -o max | awk '$4 != "." {print}' > data/introgression_scans/bed_files/wel.welba.tenkb_windows.bed
+for intro in lpa_to_wel lpa_to_sel wel_to_lpa sel_to_lpa wel_and_sel_to_lpa; do
+    intro_bed=data/introgression_scans/bed_files/${intro}_intro.merged.bed
+    bedtools intersect -a ${intro_bed} -b ${genes_bed} -wao | cut -f1,2,3,8 \
+        > data/introgression_scans/bed_files/${intro}_intro.merged.gene_overlap.bed
+    for n in {0..99}; do
+        intro_bed=data/introgression_scans/${intro}_randomwins/random_windows.${n}.bed
+        bedtools intersect -a <(cut -f1,2,3 ${intro_bed} | sort -k 1,1 -k2,2n) -b ${genes_bed} -wao | cut -f1,2,3,8 \
+            > data/introgression_scans/${intro}_randomwins/random_windows.${n}.gene_overlap.bed
+    done
+done
+```
 
-bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
-    -b data/introgression_scans/bed_files/lpa-wel.all_windows.p_bi.bed \
-    -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/wel.welbi.tenkb_windows.bed
+### Plot distributions and calculate differences
 
-# SEL
-    bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
-        -b data/introgression_scans/bed_files/sel_diversity.100kb_windows.bed \
-        -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/sel.pi.tenkb_windows.bed
+To plot the distributions of nucleotide diversities, telomere distances and gene overlaps:
+```
+Rscript src/introgression_scans/plot_obs_v_rand_windows.R
+```
 
-    bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
-        -b data/introgression_scans/bed_files/lpa-sel.all_windows.p_ba.bed \
-        -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/sel.selba.tenkb_windows.bed
+To print out the statistical summaries of the distributions (median differences and effect sizes):
+```
+Rscript src/introgression_scans/pi_tdist_cohend.R
+```
 
-    bedtools map -a data/introgression_scans/bed_files/tenkb_windows.bed \
-        -b data/introgression_scans/bed_files/lpa-sel.all_windows.p_bi.bed \
-        -c 4 -o mean | awk '$4 != "." {print}' > data/introgression_scans/bed_files/sel.selbi.tenkb_windows.bed
+## Gene enrichment
+
+This section is work in progress until we get better gene annotations for the reference genome.
+
+Get the ID of genes in introgressed windows:
+```
+genes_bed=data/genes.bed
+
+for intro in lpa_to_wel lpa_to_sel wel_to_lpa sel_to_lpa wel_and_sel_to_lpa; do
+    intro_bed=data/introgression_scans/bed_files/${intro}_intro.merged.bed
+    bedtools intersect \
+        -a ${genes_bed} \
+        -b ${intro_bed} |
+        cut -f4 | cut -d';' -f1 | cut -d'=' -f2 | uniq \
+    > data/introgression_scans/genes/${intro}.geneids.txt
+done
+```
+
+Get table with two columns (gene - GO terms) from gff3:
+```
+python src/introgression_scans/write_genego_table.py \
+    --igff3 'data/LYRU2_2A.FA.gff3' \
+    --otable 'data/introgression_scans/genes/LYRU2_2A.FA.genego_table.tsv'
+```
+
+Enrichment script by Lorena:
+```
+Rscript src/introgression_scans/gene_enrichment.R
 ```
