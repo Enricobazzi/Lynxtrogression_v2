@@ -205,7 +205,7 @@ Const_for_mutation_rate: 1.475
 
 ### Running GADMA2 *to be completed*
 
-Run gadma:
+To run gadma2 for a specific population pair:
 ```
 pair=lpa-wel
 pair=lpa-eel
@@ -219,7 +219,7 @@ for n in {1..50}; do
 done
 ```
 
-Resume the unfinished runs:
+Resume the unfinished runs - some had to be resumed multiple times:
 ```
 # first resumed
 pair=lpa-wel
@@ -238,8 +238,6 @@ for n in {1..50}; do
 done
 
 for n in {1..50}; do
-# for n in 5 10 18 28; do
-# for n in 15 32 38 43 45 47; do
     ncomplete=$(grep "algor" data/demographic_inference/${pair}_${n}/GADMA.log | wc -l)
     if [ $ncomplete -ne 10 ]; then
         echo "RESUMING RUN ${pair}_${n}:"
@@ -342,7 +340,7 @@ done
 
 ```
 
-Get results (demes yamls and moments scripts) *REMEMBER to explore ALL the resumed folders*
+Get results (demes yamls and moments scripts)
 ```
 pair=lpa-wel
 pair=lpa-eel
@@ -356,30 +354,12 @@ for yml in $(ls data/demographic_inference/${pair}_*/*/final_*.yml); do
     cp $yml data/demographic_inference/${pair}_best_yamls/${pair}_${n}_${k}_final_best_model.yaml
 done
 
-for n in {1..50}; do
-    for k in {1..10}; do
-        yaml=data/demographic_inference/${pair}_${n}_resumed_resumed_resumed/${k}/final_best_logLL_model_demes_code.py.yml
-        if [ -f $yaml ]; then
-            cp $yaml data/demographic_inference/${pair}_best_yamls/${pair}_${n}_${k}_final_best_model.yaml
-        fi
-    done
-done
-
 # MOMENTS SCRIPTS = final_best_logLL_model_moments_code.py
 mkdir data/demographic_inference/${pair}_best_moments
 for moms in $(ls data/demographic_inference/${pair}_*/*/final_best_logLL_model_moments_code.py); do
     n=$(echo $moms | cut -d'/' -f3 | cut -d'_' -f2)
     k=$(echo $moms | cut -d'/' -f4)
     cp $moms data/demographic_inference/${pair}_best_moments/${pair}_${n}_${k}_final_best_moments.py
-done
-
-for n in {1..50}; do
-    for k in {1..10}; do
-        moms=data/demographic_inference/${pair}_${n}_resumed_resumed_resumed/${k}/final_best_logLL_model_moments_code.py
-        if [ -f $moms ]; then
-            cp $moms data/demographic_inference/${pair}_best_moments/${pair}_${n}_${k}_final_best_moments.py
-        fi
-    done
 done
 
 # DADI SCRIPTS = final_best_logLL_model_dadi_code.py
@@ -391,7 +371,7 @@ for dads in $(ls data/demographic_inference/${pair}_*/*/final_best_logLL_model_d
 done
 ```
 
-Likelihood table
+To get a table of likelihood scores for each run
 ```
 # LIKELIHOOD TABLE
 pair=lpa-wel
@@ -410,73 +390,9 @@ for log in $(ls data/demographic_inference/${pair}_*/**/GADMA_GA.log); do
         echo "${run} ${ll}"
     fi
 done > data/demographic_inference/${pair}_ll_table.txt
-
-####################################################################################
-
-# LIKELIHOOD TABLE
-echo "run log-like" > ll_table.txt
-
-for n in {1..50}; do
-    for k in {1..10}; do
-        moms=data/demographic_inference/${pair}_${n}/${k}/final_best_logLL_model_moments_code.py
-        if [ -f $moms ]; then
-            ll=$(tail data/demographic_inference/${pair}_${n}/${k}/GADMA_GA.log | grep "y:" | cut -d':' -f2 | cut -d' ' -f2 | tail -1)
-            echo "${pair}_${n}_${k}: ${ll}"
-            echo "${pair}_${n}_${k} ${ll}" >> ll_table.txt
-        fi
-    done
-done
-
-for n in {1..50}; do
-    for k in {1..10}; do
-        moms=data/demographic_inference/${pair}_${n}_resumed/${k}/final_best_logLL_model_moments_code.py
-        if [ -f $moms ]; then
-            ll=$(tail data/demographic_inference/${pair}_${n}_resumed/${k}/GADMA_GA.log | grep "y:" | cut -d':' -f2 | cut -d' ' -f2 | tail -1)
-            echo "${pair}_${n}_${k}: ${ll}"
-            echo "${pair}_${n}_${k} ${ll}" >> ll_table.txt
-        fi
-    done
-done
-
-for n in {1..50}; do
-    for k in {1..10}; do
-        moms=data/demographic_inference/${pair}_${n}_resumed_resumed/${k}/final_best_logLL_model_moments_code.py
-        if [ -f $moms ]; then
-            ll=$(tail data/demographic_inference/${pair}_${n}_resumed_resumed/${k}/GADMA_GA.log | grep "y:" | cut -d':' -f2 | cut -d' ' -f2 | tail -1)
-            echo "${pair}_${n}_${k}: ${ll}"
-            echo "${pair}_${n}_${k} ${ll}" >> ll_table.txt
-        fi
-    done
-done
-
-
-for n in {1..50}; do
-    for k in {1..10}; do
-        moms=data/demographic_inference/${pair}_${n}_resumed_resumed_resumed/${k}/final_best_logLL_model_moments_code.py
-        if [ -f $moms ]; then
-            ll=$(tail data/demographic_inference/${pair}_${n}_resumed_resumed_resumed/${k}/GADMA_GA.log | grep "y:" | cut -d':' -f2 | cut -d' ' -f2 | tail -1)
-            echo "${pair}_${n}_${k}: ${ll}"
-            echo "${pair}_${n}_${k} ${ll}" >> ll_table.txt
-        fi
-    done
-done
-
-for n in {1..50}; do
-    for k in {1..10}; do
-        moms=data/demographic_inference/${pair}_${n}_resumed_resumed_resumed_resumed/${k}/final_best_logLL_model_moments_code.py
-        if [ -f $moms ]; then
-            ll=$(tail data/demographic_inference/${pair}_${n}_resumed_resumed_resumed_resumed/${k}/GADMA_GA.log | grep "y:" | cut -d':' -f2 | cut -d' ' -f2 | tail -1)
-            echo "${pair}_${n}_${k}: ${ll}"
-            echo "${pair}_${n}_${k} ${ll}" >> ll_table.txt
-        fi
-    done
-done
-
-
-sort -rnk 2 ll_table.txt | uniq > tmp && mv tmp ll_table.txt
 ```
 
-### Obtaining confidence intervals from best runs *to be completed*
+### Obtaining confidence intervals from best runs
 
 Instructions in the [gadma manual page](https://gadma.readthedocs.io/en/latest/user_manual/confidence_intervals.html)
 
@@ -671,17 +587,9 @@ done
 
 To plot the trajectories of Ne and migration rates through time in the best models I use [plot_ne_mig.py](src/demographic_inference/plot_ne_mig.py)
 
+#### Plot full demographies of wel and sel
 
-### Plotting Results ***OLD***
-
-I use the [plot_model_and_params.py](src/demographic_inference/plot_model_and_params.py) python script to draw the best scoring models using the python package demesdraw and the demes yaml file that are generated by gadma2. The script will also plot the distributions of each parameter in the model in a separate plot, highlighting the confidence interval limits and the optimal value recovered during the gadma2 run.
+To plot a summary of the demographic histories reconstructed by the top three models:
 ```
-pair=lpa-wel
-for run in 12_9 6_2 20_7; do
-    python src/demographic_inference/plot_model_and_params.py \
-        --params data/demographic_inference/${pair}_CI/${pair}_${run}/result_table_converted.csv \
-        --confint data/demographic_inference/${pair}_CI/${pair}_${run}/confidence_intervals.tsv \
-        --best_yaml data/demographic_inference/${pair}_best_yamls/${pair}_${run}_final_best_model.yaml \
-        --output plots/demographic_inference 
-done
+python src/demographic_inference/plot_demo.py
 ```

@@ -18,15 +18,23 @@ Genotypes of all the samples were extracted from the individual alignments and j
 
 ### Variant Filtering
 
-I describe the steps I take for filtering the variant dataset in [variant_filtering](variant_filtering.md)
+I describe the steps I take for filtering the variant dataset in [variant_filtering](variant_filtering.md).
+
+### Demographic inference
+
+I reconstructed the demographic history between population pairs using the software [GADMA2](https://github.com/ctlab/GADMA). All the necessary steps are described in [demographic_inference](demographic_inference.md).
+
+### Introgression scans
+
+I used an approach based on deep convolutional neural networks, described by [Ray et al. 2024](https://journals.plos.org/plosgenetics/article?id=10.1371/journal.pgen.1010657) and implemented in [introNets](https://github.com/SchriderLab/introNets), to identify windows with introgression along the genomes of all the lynx populations (*eel not included for now*). Data preparation, scripts and description of downstream analyses and results are included in [introgression_scans_withM](introgression_scans_withM.md).
 
 
 ### Conda environment for analyses
 
 Unless specified this environment is used and created as follows:
-
 ```
 conda create -n lynxtrogression_v2 python=3.9
+conda activate lynxtrogression_v2
 pip install demes
 pip uninstall ruamel.yaml
 pip install "ruamel.yaml<0.18.0"
