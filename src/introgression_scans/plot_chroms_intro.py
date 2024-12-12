@@ -40,20 +40,20 @@ def plot_chroms(ibed, colors, ofile):
     """
     bed = pd.read_csv(ibed, sep='\t', names=["chrom", "start", "end"])
     chrs = bed.chrom.unique()
-    fig, ax = plt.subplots(figsize=(6*1.5, 8*1.5))
+    fig, ax = plt.subplots(figsize=(6*1.3, 8*1))
     for n, chrom in enumerate(chrs[::-1]):
         wins = bed[bed.chrom == chrom]
         nin = np.array([wins['end'] - wins['start']]).sum()
         ntot = max(wins["end"])
         pc = f'{round(nin/ntot*100, 2)}'
-        ax.text(ntot, n*2 + 0.5, f"  {pc}%", verticalalignment='center', horizontalalignment='left', color='black')
-        ax.broken_barh([(0, max(wins["end"]))], (n * 2, 1),
+        ax.text(ntot, n*1.5 + 0.5, f"  {pc}%", verticalalignment='center', horizontalalignment='left', color='black')
+        ax.broken_barh([(0, max(wins["end"]))], (n * 1.5, 1),
                         color=colors['none'], alpha=1, label='no introgression')
-        ax.broken_barh([z for z in zip(wins["start"], wins["end"] - wins["start"])], (n * 2, 1), 
+        ax.broken_barh([z for z in zip(wins["start"], wins["end"] - wins["start"])], (n * 1.5, 1), 
                         color=colors['intro'], alpha=1, label="introgression", linewidth=0.2)
-        ax.broken_barh([(0, max(wins["end"]))], (n * 2, 1),
+        ax.broken_barh([(0, max(wins["end"]))], (n * 1.5, 1),
                         color='none', alpha=1, edgecolor='black', linewidth=1)
-        ax.set_yticks([n*2 + 0.5 for n in range(len(chrs))])
+        ax.set_yticks([n*1.5 + 0.5 for n in range(len(chrs))])
     ax.set_yticklabels([f"{chrom.split('_')[1][3:5]}" for chrom in chrs[::-1]])
     ax.set_xlim(0, max(bed["end"] * 1.1))
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f'{round(x / 1e6, 2)} M'))
