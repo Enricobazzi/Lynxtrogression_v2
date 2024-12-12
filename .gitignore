@@ -40,7 +40,13 @@ data/mLynRuf2.2.*
 data/introgression_scans/lpa-wel_*
 data/introgression_scans/lpa-sel_*
 data/introgression_scans/lpa-eel_*
-
+data/introgression_scans/*_randomwins/
+data/introgression_scans/genes/
+data/*.list
+data/introgression_scans/*.tsv
+data/introgression_scans/*.bed
+data/introgression_scans/*.log
+data/introgression_scans/*.pi
 # testing notebook
 tester.ipynb
 tester.Rmd
@@ -76,6 +82,12 @@ plots/
 
 # shit
 shit/
+manuscript/
+testing_ea.sh
+introscans.ipynb
+src/introgression_scans/squirri.R
+src/introgression_scans/plot_obs_v_rand_windows.py
+src/introgression_scans/plot_obs_v_rand_windows_old.py
 
 # file extensions:
 *.npz
