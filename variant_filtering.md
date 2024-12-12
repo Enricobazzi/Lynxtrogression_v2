@@ -193,26 +193,26 @@ Draw the plot with [draw_miss_plot.R](src/variant_filtering/draw_miss_plot.R).
 
 ![missplot](data/variant_filtering/missing/missing_plot.png)
 
-lpa: 692764 SNPs have a proportion of missing genotypes greater than 0.05 (>1.10 samples) = 10.66% of total SNPs filtered
-lpa: 373831 SNPs have a proportion of missing genotypes greater than 0.1 (>2.2 samples) = 5.755% of total SNPs filtered
-lpa: 254833 SNPs have a proportion of missing genotypes greater than 0.15 (>3.30 samples) = 3.923% of total SNPs filtered
-lpa: 194002 SNPs have a proportion of missing genotypes greater than 0.2 (>4.4 samples) = 2.986% of total SNPs filtered
-lpa: 154852 SNPs have a proportion of missing genotypes greater than 0.25 (>5.50 samples) = 2.384% of total SNPs filtered
-wel: 643120 SNPs have a proportion of missing genotypes greater than 0.05 (>1.00 samples) = 9.901% of total SNPs filtered
-wel: 373869 SNPs have a proportion of missing genotypes greater than 0.1 (>2.0 samples) = 5.756% of total SNPs filtered
-wel: 271336 SNPs have a proportion of missing genotypes greater than 0.15 (>3.00 samples) = 4.177% of total SNPs filtered
-wel: 214448 SNPs have a proportion of missing genotypes greater than 0.2 (>4.0 samples) = 3.301% of total SNPs filtered
-wel: 174580 SNPs have a proportion of missing genotypes greater than 0.25 (>5.00 samples) = 2.687% of total SNPs filtered
-eel: 961080 SNPs have a proportion of missing genotypes greater than 0.05 (>.95 samples) = 14.79% of total SNPs filtered
-eel: 395312 SNPs have a proportion of missing genotypes greater than 0.1 (>1.9 samples) = 6.086% of total SNPs filtered
-eel: 272059 SNPs have a proportion of missing genotypes greater than 0.15 (>2.85 samples) = 4.188% of total SNPs filtered
-eel: 210438 SNPs have a proportion of missing genotypes greater than 0.2 (>3.8 samples) = 3.239% of total SNPs filtered
-eel: 168092 SNPs have a proportion of missing genotypes greater than 0.25 (>4.75 samples) = 2.587% of total SNPs filtered
-sel: 209452 SNPs have a proportion of missing genotypes greater than 0.05 (>.60 samples) = 3.224% of total SNPs filtered
-sel: 119043 SNPs have a proportion of missing genotypes greater than 0.1 (>1.2 samples) = 1.832% of total SNPs filtered
-sel: 119043 SNPs have a proportion of missing genotypes greater than 0.15 (>1.80 samples) = 1.832% of total SNPs filtered
-sel: 85411 SNPs have a proportion of missing genotypes greater than 0.2 (>2.4 samples) = 1.314% of total SNPs filtered
-sel: 63572 SNPs have a proportion of missing genotypes greater than 0.25 (>3.00 samples) = .9787% of total SNPs filtered
+- lpa: 692764 SNPs have a proportion of missing genotypes greater than 0.05 (>1.10 samples) = 10.66% of total SNPs filtered
+- lpa: 373831 SNPs have a proportion of missing genotypes greater than 0.1 (>2.2 samples) = 5.755% of total SNPs filtered
+- lpa: 254833 SNPs have a proportion of missing genotypes greater than 0.15 (>3.30 samples) = 3.923% of total SNPs filtered
+- lpa: 194002 SNPs have a proportion of missing genotypes greater than 0.2 (>4.4 samples) = 2.986% of total SNPs filtered
+- lpa: 154852 SNPs have a proportion of missing genotypes greater than 0.25 (>5.50 samples) = 2.384% of total SNPs filtered
+- wel: 643120 SNPs have a proportion of missing genotypes greater than 0.05 (>1.00 samples) = 9.901% of total SNPs filtered
+- wel: 373869 SNPs have a proportion of missing genotypes greater than 0.1 (>2.0 samples) = 5.756% of total SNPs filtered
+- wel: 271336 SNPs have a proportion of missing genotypes greater than 0.15 (>3.00 samples) = 4.177% of total SNPs filtered
+- wel: 214448 SNPs have a proportion of missing genotypes greater than 0.2 (>4.0 samples) = 3.301% of total SNPs filtered
+- wel: 174580 SNPs have a proportion of missing genotypes greater than 0.25 (>5.00 samples) = 2.687% of total SNPs filtered
+- eel: 961080 SNPs have a proportion of missing genotypes greater than 0.05 (>.95 samples) = 14.79% of total SNPs filtered
+- eel: 395312 SNPs have a proportion of missing genotypes greater than 0.1 (>1.9 samples) = 6.086% of total SNPs filtered
+- eel: 272059 SNPs have a proportion of missing genotypes greater than 0.15 (>2.85 samples) = 4.188% of total SNPs filtered
+- eel: 210438 SNPs have a proportion of missing genotypes greater than 0.2 (>3.8 samples) = 3.239% of total SNPs filtered
+- eel: 168092 SNPs have a proportion of missing genotypes greater than 0.25 (>4.75 samples) = 2.587% of total SNPs filtered
+- sel: 209452 SNPs have a proportion of missing genotypes greater than 0.05 (>.60 samples) = 3.224% of total SNPs filtered
+- sel: 119043 SNPs have a proportion of missing genotypes greater than 0.1 (>1.2 samples) = 1.832% of total SNPs filtered
+- sel: 119043 SNPs have a proportion of missing genotypes greater than 0.15 (>1.80 samples) = 1.832% of total SNPs filtered
+- sel: 85411 SNPs have a proportion of missing genotypes greater than 0.2 (>2.4 samples) = 1.314% of total SNPs filtered
+- sel: 63572 SNPs have a proportion of missing genotypes greater than 0.25 (>3.00 samples) = .9787% of total SNPs filtered
 
 
 ### Calculate read depth filters in 10k bp window
@@ -240,16 +240,7 @@ lpa fail: 1202
 all fail: 714
 lpa fail and others pass: 275
 ```
-and these plots:
-
-<table>
-    <tr>
-        <td><img src="data/variant_filtering/depth/lpa_depth_distribution.png" alt="lpa_depth_distribution" style="width: 90%;" /></td>
-        <td><img src="data/variant_filtering/depth/wel_depth_distribution.png" alt="wel_depth_distribution" style="width: 90%;" /></td>
-        <td><img src="data/variant_filtering/depth/eel_depth_distribution.png" alt="eel_depth_distribution" style="width: 90%;" /></td>
-        <td><img src="data/variant_filtering/depth/sel_depth_distribution.png" alt="sel_depth_distribution" style="width: 90%;" /></td>
-    </tr>
-</table>
+and plots that show depth distributions and limit values in the different populations.
 
 ### Create Population-Pair vcfs and apply population filters
 
