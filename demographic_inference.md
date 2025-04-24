@@ -16,6 +16,10 @@ ref_dir=/mnt/lustre/hsm/nlsas/notape/home/csic/ebd/jgl/reference_genomes/lynx_ru
 awk '$3 == "gene" {print}' ${ref_dir}/LYRU2_2A.FA.gff3 |
     cut -f1,4,5,9 | awk '{print $1, $2-1, $3, $4}' | tr ' ' '\t' \
     > ${ref_dir}/genes.bed
+
+awk '$3 == "CDS" {print}' ${ref_dir}/LYRU2_2A.FA.gff3 |
+    cut -f1,4,5,9 | awk '{print $1, $2-1, $3, $4}' | tr ' ' '\t' \
+    > ${ref_dir}/cds.bed
 ```
 
 Then I subtract them from the VCF:

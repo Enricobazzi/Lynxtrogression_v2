@@ -296,17 +296,17 @@ for pop_pair in lpa-wel lpa-sel; do
                 --confint data/demographic_inference/${pop_pair}_CI/${pop_pair}.${model}.CI.csv \
                 --path_to_msmodified src/introNets/msmodified/ms \
                 --migration ${migration} \
-                --nreps 250 \
+                --nreps 2500 \
                 --odir data/introgression_scans/evaluation_withM/${pop_pair}_${model}_${migration}
             
             # FILTER SIMS
             mkdir data/introgression_scans/evaluation_withM/${pop_pair}_${model}_${migration}/filtered
             if [ ${migration} == 'ab' ] || [ ${migration} == 'ba' ] || [ ${migration} == 'none' ]; then
                 mig=${migration}
-                nsims=100
+                nsims=1000
             elif [ ${migration} == 'abba' ] || [ ${migration} == 'baab' ]; then
                 mig="bi"
-                nsims=50
+                nsims=500
             fi
             python src/introgression_scans/filter_sims.py \
                 --idir data/introgression_scans/evaluation_withM/${pop_pair}_${model}_${migration} \
@@ -356,42 +356,41 @@ for pop_pair in lpa-wel lpa-sel; do
 done
 ```
 
-To plot them I run [plot_eval.py](src/introgression_scans/plot_eval.py):
+To plot them I run [plot_eval_intro_binary.py](src/introgression_scans/plot_eval_intro_binary.py) and [plot_eval_intro_binary.py](src/introgression_scans/plot_eval_intro_direction.py):
 ```
 for pop_pair in lpa-wel lpa-sel; do
 
-    if [ ${pop_pair} == 'lpa-wel' ]; then
+    if [ ${pop_pair} = 'lpa-wel' ]; then
         models=(12_9 6_2 20_7)
-    elif [ ${pop_pair} == 'lpa-eel' ]; then
+    elif [ ${pop_pair} = 'lpa-eel' ]; then
         models=(34_7 38_4 30_1)
-    elif [ ${pop_pair} == 'lpa-sel' ]; then
+    elif [ ${pop_pair} = 'lpa-sel' ]; then
         models=(12_6 18_7 18_10)
     fi
 
-    # for different threshold values
     for p in '0.95' '0.9' '0.85' '0.8' '0.75'; do
         pt=$(echo ${p} | tr '.' '_')
-        # plot all models
-        echo "plot all models ${p}"
-        python src/introgression_scans/plot_eval.py \
+        echo "plot binary introgression with p_thresh ${p}"
+        
+        python src/introgression_scans/plot_eval_intro_binary.py \
             --idir data/introgression_scans/evaluation_withM \
             --pop_pair ${pop_pair} \
             --models $(for model in ${models[@]}; do echo ${model}; done | tr '\n' ',') \
             --pthresh ${p} \
-            --oplot plots/introgression_scans/evaluation_withM/${pop_pair}.all_models.${pt}.cm.pdf
-        # and then each model
-        for model in ${models[@]}; do
-            echo "plot ${model} ${p}"
-            python src/introgression_scans/plot_eval.py \
-                --idir data/introgression_scans/evaluation_withM \
-                --pop_pair ${pop_pair} \
-                --models ${model} \
-                --pthresh ${p} \
-                --oplot plots/introgression_scans/evaluation_withM/${pop_pair}.${model}.${pt}.cm.pdf
-        done
+            --oplot plots/introgression_scans/evaluation_withM/${pop_pair}.intro_binary.${pt}.cm.pdf
+        
+        echo "plot introgression direction with p_tresh ${p}"
+        python src/introgression_scans/plot_eval_intro_direction.py \
+            --idir data/introgression_scans/evaluation_withM \
+            --pop_pair ${pop_pair} \
+            --models $(for model in ${models[@]}; do echo ${model}; done | tr '\n' ',') \
+            --pthresh ${p} \
+            --oplot plots/introgression_scans/evaluation_withM/${pop_pair}.intro_direction.${pt}.cm.pdf
+
     done
 done
 ```
+To get precision - recall graphs I run [plot_eval_intro_binary.py](src/introgression_scans/plot_eval_intro_binary.py) 
 
 
 ## Real data preparation
@@ -751,8 +750,8 @@ done
 
 Find amount of overlapping base pairs with annotated genes and either introgressed windows or random ones of same size using bedtools intersect:
 ```
+# whole genes
 genes_bed=data/genes.bed
-
 for intro in lpa_to_wel lpa_to_sel wel_to_lpa sel_to_lpa wel_and_sel_to_lpa; do
     intro_bed=data/introgression_scans/bed_files/${intro}_intro.merged.bed
     bedtools intersect -a ${intro_bed} -b ${genes_bed} -wao | cut -f1,2,3,8 \
@@ -763,7 +762,197 @@ for intro in lpa_to_wel lpa_to_sel wel_to_lpa sel_to_lpa wel_and_sel_to_lpa; do
             > data/introgression_scans/${intro}_randomwins/random_windows.${n}.gene_overlap.bed
     done
 done
+
+# only cds
+genes_bed=data/cds.bed
+for intro in lpa_to_wel lpa_to_sel wel_to_lpa sel_to_lpa wel_and_sel_to_lpa; do
+    intro_bed=data/introgression_scans/bed_files/${intro}_intro.merged.bed
+    bedtools intersect -a ${intro_bed} -b ${genes_bed} -wao | cut -f1,2,3,8 \
+        > data/introgression_scans/bed_files/${intro}_intro.merged.cds_overlap.bed
+    for n in {0..99}; do
+        intro_bed=data/introgression_scans/${intro}_randomwins/random_windows.${n}.bed
+        bedtools intersect -a <(cut -f1,2,3 ${intro_bed} | sort -k 1,1 -k2,2n) -b ${genes_bed} -wao | cut -f1,2,3,8 \
+            > data/introgression_scans/${intro}_randomwins/random_windows.${n}.cds_overlap.bed
+    done
+done
 ```
+Same but with number of genes:
+```
+# n of genes
+genes_bed=data/genes.bed
+for intro in lpa_to_wel lpa_to_sel wel_to_lpa sel_to_lpa wel_and_sel_to_lpa; do
+    intro_bed=data/introgression_scans/bed_files/${intro}_intro.merged.bed
+    bedtools intersect -a ${intro_bed} -b ${genes_bed} -c \
+        > data/introgression_scans/bed_files/${intro}_intro.merged.n_genes.bed
+    for n in {0..99}; do
+        intro_bed=data/introgression_scans/${intro}_randomwins/random_windows.${n}.bed
+        bedtools intersect -a <(cut -f1,2,3 ${intro_bed} | sort -k 1,1 -k2,2n) -b ${genes_bed} -c \
+            > data/introgression_scans/${intro}_randomwins/random_windows.${n}.n_genes.bed
+    done
+done
+```
+
+### Divergence of CDS: random vs observed
+
+Calculate the Dmax from [Dxy](https://www.pnas.org/doi/abs/10.1073/pnas.76.10.5269) and [Gmin](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0118621).
+
+To make bed files with CDS in intro and random:
+```
+genes_bed=data/cds.bed
+for intro in lpa_to_wel lpa_to_sel wel_to_lpa sel_to_lpa wel_and_sel_to_lpa; do
+    intro_bed=data/introgression_scans/bed_files/${intro}_intro.merged.bed
+    bedtools intersect -a ${intro_bed} -b ${genes_bed} \
+        > data/introgression_scans/bed_files/${intro}_intro.merged.cds.bed
+    for n in {0..99}; do
+        intro_bed=data/introgression_scans/${intro}_randomwins/random_windows.${n}.bed
+        bedtools intersect -a <(cut -f1,2,3 ${intro_bed} | sort -k 1,1 -k2,2n) -b ${genes_bed} \
+            > data/introgression_scans/${intro}_randomwins/random_windows.${n}.cds.bed
+    done
+done
+
+genes_bed=data/genes.bed
+for intro in lpa_to_wel lpa_to_sel wel_to_lpa sel_to_lpa wel_and_sel_to_lpa; do
+    intro_bed=data/introgression_scans/bed_files/${intro}_intro.merged.bed
+    bedtools intersect -a ${intro_bed} -b ${genes_bed} \
+        > data/introgression_scans/bed_files/${intro}_intro.merged.genes.bed
+    for n in {0..99}; do
+        intro_bed=data/introgression_scans/${intro}_randomwins/random_windows.${n}.bed
+        bedtools intersect -a <(cut -f1,2,3 ${intro_bed} | sort -k 1,1 -k2,2n) -b ${genes_bed} \
+            > data/introgression_scans/${intro}_randomwins/random_windows.${n}.genes.bed
+    done
+done
+
+```
+
+Calculate Dmax in each introgression scenario in observed vs random CDS:
+```
+## LPA TO WEL INTRO - LPA-WEL DMAX ##
+pop_pair=lpa-wel
+vcf_file=data/lynxtrogression_v2.autosomic_scaffolds.filter4.${pop_pair}.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf
+intro=lpa_to_wel
+bed_file=data/introgression_scans/bed_files/${intro}_intro.merged.cds.bed
+obed=data/introgression_scans/bed_files/${intro}_intro.merged.${pop_pair}_dmax.bed
+pop_sizes="40,44"
+
+python src/introgression_scans/write_dmax_bed.py \
+    --ivcf ${vcf_file} \
+    --ibed ${bed_file} \
+    --pop_sizes ${pop_sizes} \
+    --obed ${obed}
+
+for n in {0..99}; do
+    bed_file=data/introgression_scans/${intro}_randomwins/random_windows.${n}.cds.bed
+    obed=data/introgression_scans/${intro}_randomwins/random_windows.${n}.${pop_pair}_dmax.bed
+    python src/introgression_scans/write_dmax_bed.py \
+        --ivcf ${vcf_file} \
+        --ibed ${bed_file} \
+        --pop_sizes ${pop_sizes} \
+        --obed ${obed}
+done
+
+```
+
+Calculate Dmax in each introgression scenario in observed vs random GENES:
+```
+## LPA TO WEL INTRO - LPA-WEL DMAX ##
+pop_pair=lpa-wel
+vcf_file=data/lynxtrogression_v2.autosomic_scaffolds.filter4.${pop_pair}.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf
+intro=lpa_to_wel
+bed_file=data/introgression_scans/bed_files/${intro}_intro.merged.genes.bed
+obed=data/introgression_scans/bed_files/${intro}_intro.merged.${pop_pair}_dmax.bed
+pop_sizes="40,44"
+
+python src/introgression_scans/write_dmax_bed.py \
+    --ivcf ${vcf_file} \
+    --ibed ${bed_file} \
+    --pop_sizes ${pop_sizes} \
+    --obed ${obed}
+
+for n in {0..9}; do
+    bed_file=data/introgression_scans/${intro}_randomwins/random_windows.${n}.genes.bed
+    obed=data/introgression_scans/${intro}_randomwins/random_windows.${n}.${pop_pair}_dmax.bed
+    python src/introgression_scans/write_dmax_bed.py \
+        --ivcf ${vcf_file} \
+        --ibed ${bed_file} \
+        --pop_sizes ${pop_sizes} \
+        --obed ${obed}
+done
+
+## LPA TO SEL INTRO - LPA-SEL DMAX ##
+pop_pair=lpa-sel
+vcf_file=data/lynxtrogression_v2.autosomic_scaffolds.filter4.${pop_pair}.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf
+intro=lpa_to_sel
+bed_file=data/introgression_scans/bed_files/${intro}_intro.merged.genes.bed
+obed=data/introgression_scans/bed_files/${intro}_intro.merged.${pop_pair}_dmax.bed
+pop_sizes="24,44"
+
+python src/introgression_scans/write_dmax_bed.py \
+    --ivcf ${vcf_file} \
+    --ibed ${bed_file} \
+    --pop_sizes ${pop_sizes} \
+    --obed ${obed}
+
+for n in {0..9}; do
+    bed_file=data/introgression_scans/${intro}_randomwins/random_windows.${n}.genes.bed
+    obed=data/introgression_scans/${intro}_randomwins/random_windows.${n}.${pop_pair}_dmax.bed
+    python src/introgression_scans/write_dmax_bed.py \
+        --ivcf ${vcf_file} \
+        --ibed ${bed_file} \
+        --pop_sizes ${pop_sizes} \
+        --obed ${obed}
+done
+
+
+## WEL&SEL TO LPA INTRO - LPA-WEL DMAX ##
+pop_pair=lpa-wel
+vcf_file=data/lynxtrogression_v2.autosomic_scaffolds.filter4.${pop_pair}.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf
+intro=wel_and_sel_to_lpa
+bed_file=data/introgression_scans/bed_files/${intro}_intro.merged.genes.bed
+obed=data/introgression_scans/bed_files/${intro}_intro.merged.${pop_pair}_dmax.bed
+pop_sizes="40,44"
+
+python src/introgression_scans/write_dmax_bed.py \
+    --ivcf ${vcf_file} \
+    --ibed ${bed_file} \
+    --pop_sizes ${pop_sizes} \
+    --obed ${obed}
+
+for n in {0..9}; do
+    bed_file=data/introgression_scans/${intro}_randomwins/random_windows.${n}.genes.bed
+    obed=data/introgression_scans/${intro}_randomwins/random_windows.${n}.${pop_pair}_dmax.bed
+    python src/introgression_scans/write_dmax_bed.py \
+        --ivcf ${vcf_file} \
+        --ibed ${bed_file} \
+        --pop_sizes ${pop_sizes} \
+        --obed ${obed}
+done
+
+## WEL&SEL TO LPA INTRO - LPA-SEL DMAX ##
+pop_pair=lpa-sel
+vcf_file=data/lynxtrogression_v2.autosomic_scaffolds.filter4.${pop_pair}.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf
+intro=wel_and_sel_to_lpa
+bed_file=data/introgression_scans/bed_files/${intro}_intro.merged.genes.bed
+obed=data/introgression_scans/bed_files/${intro}_intro.merged.${pop_pair}_dmax.bed
+pop_sizes="24,44"
+
+python src/introgression_scans/write_dmax_bed.py \
+    --ivcf ${vcf_file} \
+    --ibed ${bed_file} \
+    --pop_sizes ${pop_sizes} \
+    --obed ${obed}
+
+for n in {0..9}; do
+    bed_file=data/introgression_scans/${intro}_randomwins/random_windows.${n}.genes.bed
+    obed=data/introgression_scans/${intro}_randomwins/random_windows.${n}.${pop_pair}_dmax.bed
+    python src/introgression_scans/write_dmax_bed.py \
+        --ivcf ${vcf_file} \
+        --ibed ${bed_file} \
+        --pop_sizes ${pop_sizes} \
+        --obed ${obed}
+done
+
+```
+
 
 ### Plot distributions and calculate differences
 
@@ -802,7 +991,130 @@ python src/introgression_scans/write_genego_table.py \
     --otable 'data/introgression_scans/genes/LYRU2_2A.FA.genego_table.tsv'
 ```
 
-Enrichment script by Lorena:
+Enrichment script [gene_enrichment.R](src/introgression_scans/gene_enrichment.R) by Lorena:
 ```
 Rscript src/introgression_scans/gene_enrichment.R
+```
+
+To summarize go-enrichment results using [go-figure](https://gitlab.com/evogenlab/GO-Figure):
+```
+conda activate go-figure
+for intro in lpa_to_wel lpa_to_sel wel_and_sel_to_lpa; do
+    python ~/miniconda3/envs/go-figure/bin/gofigure.py \
+        -i data/introgression_scans/genes/${intro}.go_pval.over.txt \
+        -o plots/introgression_scans/ \
+        --font_size xx-small --max_clusters 100 --max_label 100 \
+        --similarity_cutoff 0.8 --size_range small \
+        --outfile_appendix ${intro}
+done
+```
+
+Plotsss:
+```
+# data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-sel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf
+# data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-wel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf
+
+python src/introgression_scans/plot_window_matrix.py \
+    --ivcf 'data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-sel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf' \
+    --chr 'mLynRuf2.2_ChrB2_rc' \
+    --start 31777019 \
+    --end 31939789 \
+    --oplot lpa-sel_mLynRuf2.2_ChrB2_rc_31777019_31939789.png
+
+
+n=29000000
+end=30500000
+while [ "$n" -le "$end" ]; do
+    m=$((n + 50000))
+    python src/introgression_scans/plot_window_matrix.py \
+        --ivcf 'data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-sel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf' \
+        --chr 'mLynRuf2.2_ChrB2_rc' \
+        --start ${n} \
+        --end ${m} \
+        --oplot lpa-sel_mLynRuf2.2_ChrB2_rc_${n}_${m}.png
+    n=${m}
+done
+
+python src/introgression_scans/plot_window_matrix.py \
+    --ivcf 'data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-wel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf' \
+    --chr 'mLynRuf2.2_ChrB2_rc' \
+    --start 29866368 \
+    --end 29948334 \
+    --oplot plots/introgression_scans/lpa-wel_B2_w1079.png
+
+python src/introgression_scans/plot_window_matrix.py \
+    --ivcf 'data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-wel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf' \
+    --chr 'mLynRuf2.2_ChrB2_rc' \
+    --start 29920323 \
+    --end 29988914 \
+    --oplot plots/introgression_scans/lpa-wel_B2_w1080.png
+
+python src/introgression_scans/plot_window_matrix.py \
+    --ivcf 'data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-wel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf' \
+    --chr 'mLynRuf2.2_ChrB2_rc' \
+    --start 29948722 \
+    --end 30025661 \
+    --oplot plots/introgression_scans/lpa-wel_B2_w1081.png
+
+python src/introgression_scans/plot_window_matrix.py \
+    --ivcf 'data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-wel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf' \
+    --chr 'mLynRuf2.2_ChrB2_rc' \
+    --start 29989493 \
+    --end 30053257 \
+    --oplot plots/introgression_scans/lpa-wel_B2_w1082.png
+
+python src/introgression_scans/plot_window_matrix.py \
+    --ivcf 'data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-wel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf' \
+    --chr 'mLynRuf2.2_ChrB2_rc' \
+    --start 30025663 \
+    --end 30082293 \
+    --oplot plots/introgression_scans/lpa-wel_B2_w1083.png
+
+python src/introgression_scans/plot_window_matrix.py \
+    --ivcf 'data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-wel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf' \
+    --chr 'mLynRuf2.2_ChrB2_rc' \
+    --start 30053635 \
+    --end 30125164 \
+    --oplot plots/introgression_scans/lpa-wel_B2_w1084.png
+python src/introgression_scans/plot_window_matrix.py \
+    --ivcf 'data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-wel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf' \
+    --chr 'mLynRuf2.2_ChrB2_rc' \
+    --start 30082405 \
+    --end 30132426 \
+    --oplot plots/introgression_scans/lpa-wel_B2_w1085.png
+python src/introgression_scans/plot_window_matrix.py \
+    --ivcf 'data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-wel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf' \
+    --chr 'mLynRuf2.2_ChrB2_rc' \
+    --start 30125168 \
+    --end 30149871 \
+    --oplot plots/introgression_scans/lpa-wel_B2_w1086.png
+
+python src/introgression_scans/plot_window_matrix.py \
+    --ivcf 'data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-sel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf' \
+    --chr 'mLynRuf2.2_ChrB2_rc' \
+    --start 31834261 \
+    --end 31881292 \
+    --oplot plots/introgression_scans/lpa-sel_B2_w1118.png
+
+python src/introgression_scans/plot_window_matrix.py \
+    --ivcf 'data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-sel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf' \
+    --chr 'mLynRuf2.2_ChrB2_rc' \
+    --start 31861704 \
+    --end 31939789 \
+    --oplot plots/introgression_scans/lpa-sel_B2_w1119.png
+
+python src/introgression_scans/plot_window_matrix.py \
+    --ivcf 'data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-sel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf' \
+    --chr 'mLynRuf2.2_ChrB2_rc' \
+    --start 30286533 \
+    --end 30323003 \
+    --oplot plots/introgression_scans/lpa-sel_B2_w1073.png
+
+python src/introgression_scans/plot_window_matrix.py \
+    --ivcf 'data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-sel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf' \
+    --chr 'mLynRuf2.2_ChrB2_rc' \
+    --start 31777019 \
+    --end 31861664 \
+    --oplot plots/introgression_scans/window_matrices/lpa-sel_B2_w1117.png
+
 ```
