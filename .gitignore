@@ -35,6 +35,7 @@ data/demographic_inference/lpa-sel_*
 
 # data
 data/genes.bed
+data/cds.bed
 data/LYRU2_2A.*
 data/mLynRuf2.2.*
 data/introgression_scans/lpa-wel_*
@@ -61,11 +62,13 @@ fake_fastas/
 # data/introgression_scans/lpa-wel_predictions/
 data/introgression_scans/bed_files/
 data/introgression_scans/evaluation_withM/
+data/introgression_scans/evaluation_withM_old/
 testing_sims_fastas
 testing_sims_withM_fastas
 testing_sims_fix_fastas
 testing_sims
 testing_sims_withM
+data/genes_analyses/
 
 # R stuff
 .Rproj.user
