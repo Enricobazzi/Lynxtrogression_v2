@@ -33,28 +33,31 @@ def get_preds_df(idir, files, pthresh):
         mig = file.split('.')[0].split('_')[-1]
         df = pd.read_csv(f'{idir}/{file}')
         if mig == 'ab':
+            # select 333 random rows
+            df = df.sample(n=333, random_state=1)
             df['truth'] = 0
         elif mig == 'ba':
-            df['truth'] = 1
+            # select 333 random rows
+            df = df.sample(n=333, random_state=1)
+            df['truth'] = 0
         elif mig == 'baab' or mig == 'abba':
-            df['truth'] = 2
+            # select 167 random rows
+            df = df.sample(n=167, random_state=1)
+            df['truth'] = 0
         elif mig == 'none':
-            df['truth'] = 3
+            df['truth'] = 1
         df_list.append(df)
+    
     preds_df = pd.concat([df for df in df_list if not df.empty])
-    # apply my criteria to get prediction
+    # apply my criteria to get prediction
     preds_df["ab_pred"] = np.where((preds_df["p_ab"] + preds_df["p_bi"] > pthresh), 1, 0)
     preds_df["ba_pred"] = np.where((preds_df["p_ba"] + preds_df["p_bi"] > pthresh), 1, 0)
     preds_df["bi_pred"] = np.where(preds_df["ab_pred"] + preds_df["ba_pred"] == 2, 1, 0)
     preds_df["none_pred"] = np.where((preds_df["ab_pred"] + preds_df["ba_pred"] + preds_df["bi_pred"]) == 0, 1, 0)
-    preds_df["pred"] = np.where(preds_df["bi_pred"] == 1, 2, np.where(preds_df["ab_pred"] == 1, 0, np.where(preds_df["ba_pred"] == 1, 1, 3)))
-
+    preds_df["pred"] = np.where(preds_df["bi_pred"] == 1, 0, np.where(preds_df["ab_pred"] == 1, 0, np.where(preds_df["ba_pred"] == 1, 0, 1)))
     return preds_df
 
 def get_confusion_matrix(preds_df):
-    """
-    Get the confusion matrix for the predictions. This is copied from introUnets.
-    """
     y_true = preds_df["truth"]
     y_pred = preds_df["pred"]
     cm = confusion_matrix(y_true, y_pred)
@@ -73,18 +76,26 @@ def get_confusion_matrix(preds_df):
                 annot[i, j] = ''
             else:
                 annot[i, j] = '%.1f%%\n%d' % (p, c)
-    cm = pd.DataFrame(cm, index=['ab', 'ba', 'bi', 'none'], columns=['ab', 'ba', 'bi', 'none'])
+    cm = pd.DataFrame(cm, index=['intro', 'none'], columns=['intro', 'none'])
     cm.index.name = 'Simulated'
     cm.columns.name = 'Predicted'
     return cm, annot
 
 def plot_cm(cm, annot, oplot):
-    """
-    Plot the confusion matrix.
-    """
-    plt.figure(figsize=(6, 4.2))
-    sns.heatmap(cm, annot=annot, fmt='', cmap='viridis', xticklabels=['ab', 'ba', 'bi', 'none'], yticklabels=['ab', 'ba', 'bi', 'none'])
+    plt.figure(figsize=(7, 4.9))
+    sns.heatmap(cm, annot=annot, fmt='', cmap='viridis', xticklabels=['intro', 'none'], yticklabels=['intro', 'none'])
     plt.savefig(oplot)
+    plt.close()
+
+def print_summary(cm):
+    tp = cm['intro'].iloc[0]
+    tn = cm['none'].iloc[1]
+    fp = cm['none'].iloc[0]
+    fn = cm['intro'].iloc[1]
+    precision = tp / (tp + fp)
+    recall = tp / (tp + fn)
+    print(f'Precision: {precision:.3f}')
+    print(f'Recall: {recall:.3f}')
 
 def main():
     args = parse_args()
@@ -92,6 +103,8 @@ def main():
     preds_df = get_preds_df(args.idir, files, args.pthresh)
     cm, annot = get_confusion_matrix(preds_df)
     plot_cm(cm, annot, args.oplot)
+    print(f"{args.pop_pair} precision and recall:")
+    print_summary(cm)
 
 if __name__ == "__main__":
     main()

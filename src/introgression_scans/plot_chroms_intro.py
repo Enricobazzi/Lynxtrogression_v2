@@ -4,6 +4,8 @@ import matplotlib.ticker as ticker
 import numpy as np
 import argparse
 
+
+
 def parse_args():
     """
     Parse command-line arguments
@@ -38,9 +40,10 @@ def plot_chroms(ibed, colors, ofile):
     """
     Plot the introgressed regions in the chromosomes from a bed file of introgressed regions.
     """
+    plt.rcParams.update({'font.size': 9})
     bed = pd.read_csv(ibed, sep='\t', names=["chrom", "start", "end"])
     chrs = bed.chrom.unique()
-    fig, ax = plt.subplots(figsize=(6*1.3, 8*1))
+    fig, ax = plt.subplots(figsize=(4, 5))
     for n, chrom in enumerate(chrs[::-1]):
         wins = bed[bed.chrom == chrom]
         nin = np.array([wins['end'] - wins['start']]).sum()

@@ -14,13 +14,17 @@ get_ran_stat <- function(intro, n, stat){
              col.names = c("chrom", "start", "end", "pi"))[,4])
 }
 
-for (stat in c("diversity", "t_dist", "gene_overlap")){
+for (stat in c("diversity", "t_dist", "gene_overlap", "cds_overlap", "n_genes")){
   if (stat == "diversity"){
     yaxname <- "Nucleotide diversity (π)"
   } else if (stat == "t_dist"){
     yaxname <- "Distance to telomere (bp)"
   } else if (stat == "gene_overlap"){
     yaxname <- "Overlap with genes (bp)"
+  } else if (stat == "cds_overlap"){
+    yaxname <- "Overlap with CDS (bp)"
+  } else if (stat == "n_genes"){
+    yaxname <- "Number of genes"
   }
   
   df <- data.frame()
@@ -67,4 +71,27 @@ for (stat in c("diversity", "t_dist", "gene_overlap")){
       )
     ggsave(paste0("plots/introgression_scans/obs_v_rand/", stat, ".violins.pdf"),
            plot = violins, width = 8, height = 4)
+}
+
+#################
+
+for (i in 1:3){
+  obs <- data.frame(
+    pop = intros_long[i],
+    pop_n = i,
+    treat = "introgressed",
+    stat = get_obs_stat(intros[i], stat)
+  )
+  statt <- c()
+  for (n in 0:99){
+    ran <- data.frame(
+      pop = intros_long[i],
+      pop_n = i,
+      treat = "random",
+      stat = get_ran_stat(intros[i], n, stat)
+    )
+    statt <- c(statt, max(ran$stat))
+  }
+  hist(statt, breaks = 20, main = paste0("histogram of ", intros_long[i]))
+  abline(v=max(obs$stat))
 }

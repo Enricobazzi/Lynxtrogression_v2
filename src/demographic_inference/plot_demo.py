@@ -122,8 +122,8 @@ for n in range(6):
         col = 1
     
     colors = {
-        0: '#0080cc', 1: '#db6b09', 2: '#003c82',
-        3: '#0080cc', 4: '#db6b09', 5: '#003c82',
+        0: '#3f007d', 1: '#41ab5d', 2: '#99000d',
+        3: '#3f007d', 4: '#41ab5d', 5: '#99000d',
     }
 
     # load data
@@ -168,12 +168,12 @@ for n in range(6):
 # divergence time plot
 axs[0, 0].set_xticks(range(3))
 axs[0, 0].set_xticklabels(['model 1', 'model 2', 'model 3'])
-axs[0, 0].set_xlabel('Demography between Western\nEurasian lynx and Iberian lynx\n')
+axs[0, 0].set_xlabel('ILa - ELw\nDemography\n')
 axs[0, 0].xaxis.tick_top()
 axs[0, 0].xaxis.set_label_position('top')
 axs[0, 1].set_xticks(range(3))
 axs[0, 1].set_xticklabels(['model 1', 'model 2', 'model 3'])
-axs[0, 1].set_xlabel('Demography between Southern\nEurasian lynx and Iberian lynx\n')
+axs[0, 1].set_xlabel('ILa - ELs\nDemography\n')
 axs[0, 1].xaxis.tick_top()
 axs[0, 1].xaxis.set_label_position('top')
 # rest of the plots
@@ -198,7 +198,7 @@ for i in range(1, 5):
 
 ### x axis stuff ###
 # divergence time plot
-axs[0, 0].set_ylabel('Divergence time\n(thousands of years)')
+axs[0, 0].set_ylabel('Divergence time\n(thousands of years)\n')
 axs[0, 0].set_ylim(0, 1_000_000)
 axs[0, 0].set_yticks([0, 200_000, 400_000, 600_000, 800_000, 1_000_000])
 axs[0, 0].set_yticklabels(['0', '200', '400', '600', '800', '1000'])
@@ -207,8 +207,8 @@ axs[0, 1].set_ylim(0, 1_000_000)
 axs[0, 1].set_yticks([0, 200_000, 400_000, 600_000, 800_000, 1_000_000])
 axs[0, 1].set_yticklabels([])
 # size plots
-axs[1, 0].set_ylabel('Eurasian lynx\npopulation size')
-axs[2, 0].set_ylabel('Iberian lynx\npopulation size')
+axs[1, 0].set_ylabel('EL population\nsize\n')
+axs[2, 0].set_ylabel('IL population\nsize\n')
 for i in range(1, 3):
     axs[i, 0].set_ylim(1000, 100_000)
     axs[i, 0].set_yscale('log')
@@ -219,8 +219,8 @@ for i in range(1, 3):
     # axs[i, 1].set_yticks([0, 2000, 4000, 6000, 8000, 10000, 12000, 14000, 16000, 18000, 20000, 22000, 24000])
     axs[i, 1].set_yticklabels([])
 # migration rate plots
-axs[3, 0].set_ylabel('Migration rate\nfrom Iberian lynx\nto Eurasian lynx')
-axs[4, 0].set_ylabel('Migration rate\nfrom Eurasian lynx\nto Iberian lynx')
+axs[3, 0].set_ylabel('IL to EL\nmigration rate\n')
+axs[4, 0].set_ylabel('EL to IL\nmigration rate\n')
 for i in range(3, 5):
     # axs[i, 0].set_ylim(0, 20)
     axs[i, 0].set_ylim(1e-8, 1e-4)

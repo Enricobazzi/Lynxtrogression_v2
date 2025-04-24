@@ -38,23 +38,30 @@ def get_preds_df(idir, files, pthresh):
             df['truth'] = 1
         elif mig == 'baab' or mig == 'abba':
             df['truth'] = 2
-        elif mig == 'none':
-            df['truth'] = 3
-        df_list.append(df)
+        if mig != 'none':
+            df_list.append(df)
+    
     preds_df = pd.concat([df for df in df_list if not df.empty])
-    # apply my criteria to get prediction
+    # apply my criteria to get prediction
     preds_df["ab_pred"] = np.where((preds_df["p_ab"] + preds_df["p_bi"] > pthresh), 1, 0)
     preds_df["ba_pred"] = np.where((preds_df["p_ba"] + preds_df["p_bi"] > pthresh), 1, 0)
     preds_df["bi_pred"] = np.where(preds_df["ab_pred"] + preds_df["ba_pred"] == 2, 1, 0)
     preds_df["none_pred"] = np.where((preds_df["ab_pred"] + preds_df["ba_pred"] + preds_df["bi_pred"]) == 0, 1, 0)
     preds_df["pred"] = np.where(preds_df["bi_pred"] == 1, 2, np.where(preds_df["ab_pred"] == 1, 0, np.where(preds_df["ba_pred"] == 1, 1, 3)))
-
+    # remove predictions 3
+    preds_df = preds_df[preds_df["pred"] != 3]
+    # subsample to have 2000 rows of truth == 0 and 2000 rows of truth == 1 and 2000 rows of truth == 2
+    preds_df_sub = pd.DataFrame()
+    for truth in [0, 1, 2]:
+        df_sub = preds_df[preds_df["truth"] == truth]
+        if len(df_sub) > 2000:
+            df_sub = df_sub.sample(n=2000, random_state=1)
+        preds_df_sub = pd.concat([preds_df_sub, df_sub])
+    preds_df = preds_df_sub
+    preds_df = preds_df.reset_index(drop=True)
     return preds_df
 
 def get_confusion_matrix(preds_df):
-    """
-    Get the confusion matrix for the predictions. This is copied from introUnets.
-    """
     y_true = preds_df["truth"]
     y_pred = preds_df["pred"]
     cm = confusion_matrix(y_true, y_pred)
@@ -73,18 +80,26 @@ def get_confusion_matrix(preds_df):
                 annot[i, j] = ''
             else:
                 annot[i, j] = '%.1f%%\n%d' % (p, c)
-    cm = pd.DataFrame(cm, index=['ab', 'ba', 'bi', 'none'], columns=['ab', 'ba', 'bi', 'none'])
+    cm = pd.DataFrame(cm, index=['ab', 'ba', 'bi'], columns=['ab', 'ba', 'bi'])
     cm.index.name = 'Simulated'
     cm.columns.name = 'Predicted'
     return cm, annot
 
 def plot_cm(cm, annot, oplot):
-    """
-    Plot the confusion matrix.
-    """
-    plt.figure(figsize=(6, 4.2))
-    sns.heatmap(cm, annot=annot, fmt='', cmap='viridis', xticklabels=['ab', 'ba', 'bi', 'none'], yticklabels=['ab', 'ba', 'bi', 'none'])
+    plt.figure(figsize=(7, 4.9))
+    sns.heatmap(cm, annot=annot, fmt='', cmap='viridis', xticklabels=['ab', 'ba', 'bi'], yticklabels=['ab', 'ba', 'bi'])
     plt.savefig(oplot)
+    plt.close()
+
+# def print_summary(cm):
+#     tp = cm['intro'].iloc[0]
+#     tn = cm['none'].iloc[1]
+#     fp = cm['none'].iloc[0]
+#     fn = cm['intro'].iloc[1]
+#     precision = tp / (tp + fp)
+#     recall = tp / (tp + fn)
+#     print(f'Precision: {precision:.3f}')
+#     print(f'Recall: {recall:.3f}')
 
 def main():
     args = parse_args()
@@ -92,6 +107,8 @@ def main():
     preds_df = get_preds_df(args.idir, files, args.pthresh)
     cm, annot = get_confusion_matrix(preds_df)
     plot_cm(cm, annot, args.oplot)
+#    print(f"{args.pop_pair} precision and recall:")
+#    print_summary(cm)
 
 if __name__ == "__main__":
     main()

@@ -4,6 +4,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
+plt.rcParams.update({'font.size': 9})
+
 ibeds=[
     'data/introgression_scans/bed_files/wel_and_sel_to_lpa_intro.merged.bed',
     'data/introgression_scans/bed_files/lpa_to_wel_intro.merged.bed',
@@ -41,7 +43,7 @@ corrs = df.groupby("introgression").apply(lambda x: x["chrom_length"].corr(x["in
 corrs.index = ["Southern Eurasian lynx", "Western Eurasian lynx", "Iberian lynx"]
 print(corrs)
 
-fig, ax = plt.subplots(figsize=(6, 6))
+fig, ax = plt.subplots(figsize=(4, 4.8))
 sns.scatterplot(data=df, x="chrom_length", y="introgression_pc", hue="introgression", ax=ax)
 # add tendency line for each introgression
 for intro in df["introgression"].unique():
