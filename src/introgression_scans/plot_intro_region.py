@@ -112,15 +112,15 @@ welab = np.array(welab_df["value"], dtype=float)
 selab = np.array(selab_df["value"], dtype=float)
 
 # Stacked area plot for welab and selab
-fig, ax = plt.subplots(figsize=(12, 4))
+fig, ax = plt.subplots(figsize=(9, 3))
 
 ax.broken_barh([z for z in zip(intro["start"], intro["end"] - intro["start"])], (0., 1.2),
                 color='none', alpha=1, label='introgression', linewidth=1.5, edgecolor='black', linestyle='--')
 #ax.stackplot((start1+end1)/2, welab, labels=['p_intro_wel'], baseline='zero', alpha=0.5, color='#003c82')
 #ax.stackplot((start2+end2)/2, selab, labels=['p_intro_sel'], baseline='zero', alpha=0.5, color='#1b9773')
 
-ax.stairs(welab, wel_stairs, alpha=0.5, label='p_intro_wel', baseline=0, fill=True, facecolor='#003c82', edgecolor='#003c82')
-ax.stairs(selab, sel_stairs, alpha=0.5, label='p_intro_sel', baseline=0, fill=True, facecolor='#1b9773', edgecolor='#1b9773')
+ax.stairs(welab, wel_stairs, alpha=0.5, label='p intro from ELw', baseline=0, fill=True, facecolor='#003c82', edgecolor='#003c82')
+ax.stairs(selab, sel_stairs, alpha=0.5, label='p intro from ELs', baseline=0, fill=True, facecolor='#1b9773', edgecolor='#1b9773')
 
 ax.broken_barh([z for z in zip(all_genes["start"], all_genes["end"] - all_genes["start"])], (-0.25, -0.5),
                 color='lightgrey', alpha=1, edgecolor='lightgrey', linewidth=1, label='all genes')
@@ -132,14 +132,14 @@ ax.broken_barh([z for z in zip(cii_genes["start"], cii_genes["end"] - cii_genes[
                 color='#de7e1e', alpha=1, edgecolor='#de7e1e', linewidth=1, label='MHC class II')
 
 # move legend outside of the plot
-ax.legend(loc='upper right', bbox_to_anchor=(1.15, 1), fontsize=8, frameon=False)
+ax.legend(loc='upper right', bbox_to_anchor=(1.2, 1), fontsize=8, frameon=False)
 ax.set_yticks([0, .25, .5, .75, 1])
-ax.set_xticks(np.arange(29_500_000, 32_500_000, 250_000))
+ax.set_xticks(np.arange(29_500_000, 32_500_000, 500_000))
 ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f'{round(x / 1e6, 2)} M'))
 ax.set_xlabel("Chromosome B2 position (bp)")
 ax.set_ylabel("")
 ax.text(-0.02, -0.5, 'Genes', va='center', ha='center', transform=ax.get_yaxis_transform(), rotation=90)
-ax.text(-0.075, 0.5, 'Probability\nof introgression', va='center', ha='center', transform=ax.get_yaxis_transform(), rotation=90)
+ax.text(-0.09, 0.5, 'Probability\nof introgression', va='center', ha='center', transform=ax.get_yaxis_transform(), rotation=90)
 
 # plt.show()
 plt.savefig('plots/introgression_scans/introgression_region.pdf', bbox_inches='tight')

@@ -129,8 +129,10 @@ pop_pairs = ['lpa-wel', 'lpa-sel']
 for pop_pair in pop_pairs:
     if pop_pair == 'lpa-wel':
         models = ['12_9', '6_2', '20_7']
+        pair = 'ILa-ELw'
     elif pop_pair == 'lpa-sel':
-        models = ['12_6', '18_7', '18_10'] 
+        models = ['12_6', '18_7', '18_10']
+        pair = 'ILa-ELs'
 
     files = get_files(idir, pop_pair, models)
     pts = [0.75, 0.8, 0.85, 0.9, 0.95]
@@ -159,35 +161,41 @@ for pop_pair in pop_pairs:
         bi_r.append(get_recall(cm_direction, 'bi'))
     
     # plot precision and recall for intro in one plot
-    plt.figure(figsize=(7, 4.9))
+    plt.figure(figsize=(6, 5))
     
     plt.plot(pts, intro_p, label='Precision')
     plt.plot(pts, intro_r, label='Recall')
-    plt.scatter(pts, intro_p, label='Precision')
-    plt.scatter(pts, intro_r, label='Recall')
-    plt.title('Precision and Recall for Introgression')
+    plt.scatter(pts, intro_p, label='')
+    plt.scatter(pts, intro_r, label='')
+    plt.title(f'{pair}\nIntrogression')
     plt.xlabel('pthresh')
+    plt.yticks([0.75, 0.8, 0.85, 0.9, 0.95])
+    plt.xticks([0.75, 0.8, 0.85, 0.9, 0.95])
     plt.legend()
     plt.savefig(f'plots/introgression_scans/evaluation_withM/{pop_pair}_precision_recall.binary.pdf', format='pdf', bbox_inches='tight')
     
     # plot precision and recall for ab, ba, bi in two plots one for precision and one for recall
-    fig, ax = plt.subplots(1, 2, figsize=(7, 4.9))
-    ax[0].plot(pts, ab_p, label='ab')
-    ax[0].plot(pts, ba_p, label='ba')
-    ax[0].plot(pts, bi_p, label='bi')
-    ax[0].scatter(pts, ab_p, label='ab')
-    ax[0].scatter(pts, ba_p, label='ba')
-    ax[0].scatter(pts, bi_p, label='bi')
-    ax[0].set_title('Precision for ab, ba, bi')
+    fig, ax = plt.subplots(1, 2, figsize=(6, 5))
+    ax[0].plot(pts, ab_p, label='ELtoIL')
+    ax[0].plot(pts, ba_p, label='ILtoEL')
+    ax[0].plot(pts, bi_p, label='BiDir')
+    ax[0].scatter(pts, ab_p, label='')
+    ax[0].scatter(pts, ba_p, label='')
+    ax[0].scatter(pts, bi_p, label='')
+    ax[0].set_title(f'{pair}\ndirectionality precision')
     ax[0].set_xlabel('pthresh')
-    ax[1].plot(pts, ab_r, label='ab')
-    ax[1].plot(pts, ba_r, label='ba')
-    ax[1].plot(pts, bi_r, label='bi')
-    ax[1].scatter(pts, ab_r, label='ab')
-    ax[1].scatter(pts, ba_r, label='ba')
-    ax[1].scatter(pts, bi_r, label='bi')
-    ax[1].set_title('Recall for ab, ba, bi')
+    ax[0].set_yticks([0.75, 0.8, 0.85, 0.9, 0.95])
+    ax[0].set_xticks([0.75, 0.8, 0.85, 0.9, 0.95])
+    ax[1].plot(pts, ab_r, label='ELtoIL')
+    ax[1].plot(pts, ba_r, label='ILtoEL')
+    ax[1].plot(pts, bi_r, label='BiDir')
+    ax[1].scatter(pts, ab_r, label='')
+    ax[1].scatter(pts, ba_r, label='')
+    ax[1].scatter(pts, bi_r, label='')
+    ax[1].set_title(f'{pair}\ndirectionality recall')
     ax[1].set_xlabel('pthresh')
+    ax[1].set_yticks([0.75, 0.8, 0.85, 0.9, 0.95])
+    ax[1].set_xticks([0.75, 0.8, 0.85, 0.9, 0.95])
     plt.legend()
     plt.savefig(f'plots/introgression_scans/evaluation_withM/{pop_pair}_precision_recall.direction.pdf', format='pdf', bbox_inches='tight')
 

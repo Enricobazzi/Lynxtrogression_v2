@@ -61,12 +61,28 @@ def get_preds_df(idir, files, pthresh):
     preds_df = preds_df.reset_index(drop=True)
     return preds_df
 
-def get_confusion_matrix(preds_df):
+def get_confusion_matrix(preds_df, normalize="precision"):
+    """
+    Args:
+        preds_df: DataFrame with 'truth' and 'pred' columns
+        normalize: "recall" or "precision" (default)
+    Returns:
+        cm: confusion matrix as DataFrame
+        annot: annotations to plot
+    """
     y_true = preds_df["truth"]
     y_pred = preds_df["pred"]
     cm = confusion_matrix(y_true, y_pred)
-    cm_sum = np.sum(cm, axis=1, keepdims=True)
+    
+    if normalize == "recall":
+        cm_sum = np.sum(cm, axis=1, keepdims=True)  # normalize across rows
+    elif normalize == "precision":
+        cm_sum = np.sum(cm, axis=0, keepdims=True)  # normalize across columns
+    else:
+        raise ValueError("normalize must be 'recall' or 'precision'")
+    
     cm_perc = cm / cm_sum.astype(float) * 100
+    
     annot = np.empty_like(cm).astype(str)
     nrows, ncols = cm.shape
     for i in range(nrows):
@@ -74,12 +90,13 @@ def get_confusion_matrix(preds_df):
             c = cm[i, j]
             p = cm_perc[i, j]
             if i == j:
-                s = cm_sum[i]
+                s = cm_sum[0, j] if normalize == "precision" else cm_sum[i, 0]
                 annot[i, j] = '%.1f%%\n%d/%d' % (p, c, s)
             elif c == 0:
                 annot[i, j] = ''
             else:
                 annot[i, j] = '%.1f%%\n%d' % (p, c)
+
     cm = pd.DataFrame(cm, index=['ab', 'ba', 'bi'], columns=['ab', 'ba', 'bi'])
     cm.index.name = 'Simulated'
     cm.columns.name = 'Predicted'
@@ -87,7 +104,13 @@ def get_confusion_matrix(preds_df):
 
 def plot_cm(cm, annot, oplot):
     plt.figure(figsize=(7, 4.9))
-    sns.heatmap(cm, annot=annot, fmt='', cmap='viridis', xticklabels=['ab', 'ba', 'bi'], yticklabels=['ab', 'ba', 'bi'])
+    # Convert counts to percentages for coloring
+    cm_percent = cm.div(cm.sum(axis=0), axis=1) * 100  # axis=0 for precision coloring
+    # If you want to color by recall instead, you would use axis=1
+    sns.heatmap(cm_percent, annot=annot, fmt='', cmap='viridis', 
+                xticklabels=['ELtoIL', 'ILtoEL', 'BiDir'], yticklabels=['ELtoIL', 'ILtoEL', 'BiDir'],
+                vmin=0, vmax=100, cbar_kws={'label': 'Precision (%)'})
+    
     plt.savefig(oplot)
     plt.close()
 
