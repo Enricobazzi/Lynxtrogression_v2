@@ -968,8 +968,6 @@ Rscript src/introgression_scans/pi_tdist_cohend.R
 
 ## Gene enrichment
 
-This section is work in progress until we get better gene annotations for the reference genome.
-
 Get the ID of genes in introgressed windows:
 ```
 genes_bed=data/genes.bed
@@ -1008,6 +1006,8 @@ for intro in lpa_to_wel lpa_to_sel wel_and_sel_to_lpa; do
         --outfile_appendix ${intro}
 done
 ```
+
+## Plotting MHC regions
 
 Plotsss:
 ```
@@ -1109,6 +1109,14 @@ python src/introgression_scans/plot_window_matrix.py \
     --start 30286533 \
     --end 30323003 \
     --oplot plots/introgression_scans/lpa-sel_B2_w1073.png
+
+python src/introgression_scans/plot_window_matrix.py \
+    --ivcf 'data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-sel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf' \
+    --chr 'mLynRuf2.2_ChrB2_rc' \
+    --start 29855512 \
+    --end 29945068 \
+    --oplot plots/introgression_scans/window_matrices/lpa-sel_B2_w1057.png
+
 
 python src/introgression_scans/plot_window_matrix.py \
     --ivcf 'data/lynxtrogression_v2.autosomic_scaffolds.filter4.lpa-sel.ps.phased.merged.concat.fixed.afan.rd_fil.variant.vcf' \
