@@ -356,7 +356,7 @@ for pop_pair in lpa-wel lpa-sel; do
 done
 ```
 
-To plot them I run [plot_eval_intro_binary.py](src/introgression_scans/plot_eval_intro_binary.py) and [plot_eval_intro_binary.py](src/introgression_scans/plot_eval_intro_direction.py):
+To plot them I run [plot_eval_intro_binary.py](src/introgression_scans/plot_eval_intro_binary.py) and [plot_eval_intro_direction.py](src/introgression_scans/plot_eval_intro_direction.py):
 ```
 for pop_pair in lpa-wel lpa-sel; do
 
