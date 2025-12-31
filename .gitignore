@@ -48,6 +48,10 @@ data/introgression_scans/*.tsv
 data/introgression_scans/*.bed
 data/introgression_scans/*.log
 data/introgression_scans/*.pi
+data/introgression_scans/revision1
+data/introgression_scans/evaluation_withM_revision1
+data/introgression_scans/simulations_withM/
+
 # testing notebook
 tester.ipynb
 tester.Rmd

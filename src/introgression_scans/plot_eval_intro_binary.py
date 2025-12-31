@@ -113,10 +113,10 @@ def plot_cm(cm, annot, oplot):
 def print_summary(cm):
     tp = cm['intro'].iloc[0]
     tn = cm['none'].iloc[1]
-    fp = cm['none'].iloc[0]
-    fn = cm['intro'].iloc[1]
-    precision = tp / (tp + fp)
+    fp = cm['intro'].iloc[1]
+    fn = cm['none'].iloc[0]
     recall = tp / (tp + fn)
+    precision = tp / (tp + fp)
     print(f'Precision: {precision:.3f}')
     print(f'Recall: {recall:.3f}')
 

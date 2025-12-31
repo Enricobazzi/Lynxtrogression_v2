@@ -129,3 +129,44 @@ for pop_pair in lpa-wel; do
     done
 done
 ```
+
+### plot!
+
+To plot them I run [plot_eval_intro_binary.py](src/introgression_scans/plot_eval_intro_binary.py) and [plot_eval_intro_direction.py](src/introgression_scans/plot_eval_intro_direction.py). I first move all newly generated predictions to separate folders based on evaluation (`data/introgression_scans/revision1/filtered` = just altered rec and mu, `data/introgression_scans/revision1/gterror` = also added low-depth induced genotyping errors):
+
+```
+for pop_pair in lpa-wel; do
+
+    if [ ${pop_pair} = 'lpa-wel' ]; then
+        models=(12_9 6_2 20_7)
+    elif [ ${pop_pair} = 'lpa-eel' ]; then
+        models=(34_7 38_4 30_1)
+    elif [ ${pop_pair} = 'lpa-sel' ]; then
+        models=(12_6 18_7 18_10)
+    fi
+
+    for p in '0.9'; do
+        pt=$(echo ${p} | tr '.' '_')
+
+        for eval in filtered gterror; do
+            echo "plot binary introgression of ${eval} with p_thresh ${p}"
+            
+            python src/introgression_scans/plot_eval_intro_binary.py \
+                --idir data/introgression_scans/revision1/${eval}/ \
+                --pop_pair ${pop_pair} \
+                --models $(for model in ${models[@]}; do echo ${model}; done | tr '\n' ',') \
+                --pthresh ${p} \
+                --oplot plots/introgression_scans/revision1/${pop_pair}.intro_binary.${eval}.${pt}.cm.pdf
+            
+            echo "plot introgression direction of ${eval} with p_tresh ${p}"
+            python src/introgression_scans/plot_eval_intro_direction.py \
+                --idir data/introgression_scans/revision1/${eval}/ \
+                --pop_pair ${pop_pair} \
+                --models $(for model in ${models[@]}; do echo ${model}; done | tr '\n' ',') \
+                --pthresh ${p} \
+                --oplot plots/introgression_scans/revision1/${pop_pair}.intro_direction.${eval}.${pt}.cm.pdf
+        done
+    done
+done
+```
+To get precision - recall graphs I run [plot_eval_intro_binary.py](src/introgression_scans/plot_eval_intro_binary.py) 
