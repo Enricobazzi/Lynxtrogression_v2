@@ -31,7 +31,7 @@ mkdir data/introgression_scans/revision1/
 conda activate lynxtrogression_v2
 
 # for pop_pair in lpa-wel lpa-sel; do
-for pop_pair in lpa-wel; do    
+for pop_pair in lpa-sel; do    
     if [ ${pop_pair} == 'lpa-wel' ]; then
         models=(12_9 6_2 20_7)
         pop_sizes="40,44"
@@ -103,7 +103,7 @@ Get predictions from these simulations:
 conda activate ~/introNets/intronets
 
 # for pop_pair in lpa-wel lpa-sel; do
-for pop_pair in lpa-wel; do    
+for pop_pair in lpa-sel; do    
     if [ ${pop_pair} == 'lpa-wel' ]; then
         models=(12_9 6_2 20_7)
         pop_sizes="40,44"
@@ -184,7 +184,7 @@ I use the same simulations as above:
 conda activate lynxtrogression_v2
 
 for dp in {2..6}; do
-    for pop_pair in lpa-wel; do    
+    for pop_pair in lpa-sel; do
         if [ ${pop_pair} == 'lpa-wel' ]; then
             models=(12_9 6_2 20_7)
             pop_sizes="40,44"
@@ -226,7 +226,7 @@ done
 conda activate ~/introNets/intronets
 
 for dp in {2..6}; do
-    for pop_pair in lpa-wel; do    
+    for pop_pair in lpa-sel; do    
         if [ ${pop_pair} == 'lpa-wel' ]; then
             models=(12_9 6_2 20_7)
             pop_sizes="40,44"
@@ -239,7 +239,7 @@ for dp in {2..6}; do
         fi
         for model in ${models[@]}; do
             for migration in ab ba abba baab none; do
-                taskset -c 1 python src/introNets/src/models/apply_disc_to_npz.py \
+                taskset -c 2 python src/introNets/src/models/apply_disc_to_npz.py \
                     --ifile data/introgression_scans/revision1/${pop_pair}_${model}_${migration}.gterror_${dp}X.npz \
                     --ofile data/introgression_scans/revision1/${pop_pair}_${model}_${migration}.gterror_${dp}X.predictions.csv \
                     --weights data/introgression_scans/${pop_pair}_discriminator_withM/test.weights \
@@ -254,7 +254,11 @@ for dp in {2..6}; do
 done
 ```
 
-...
+### plot!
+
+I first move all newly generated predictions to separate folders for each depth (`data/introgression_scans/revision1/gterror_2X`, `data/introgression_scans/revision1/gterror_3X` ...).
+
+Then run [plot_rev1_deptheval.py](src/introgression_scans/plot_rev1_deptheval.py).
 
 ## More evaluation: check the effects of extreme mu and rec rates
 
