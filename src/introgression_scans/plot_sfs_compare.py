@@ -17,7 +17,7 @@ def get_comp_type(scenario, mig):
        (mig == 'ba' and scenario.startswith('lpa_to_')):
         return 'same'
     else:
-        return 'opposite'
+        return 'different'
 
 def plot_comparison(data, sim, pop_pair, scenario, mig, comp_type):
     fig = pylab.figure(1)
@@ -38,33 +38,41 @@ def create_record(pop_pair, scenario, mig, comp_type, ll):
         'log_likelihood': ll
     }
 
-Data = []
-pop_pairs = ['lpa-wel', 'lpa-sel']
-migs = ['none', 'ab', 'ba']
-
-for pop_pair in pop_pairs:
-    scenarios = get_scenarios(pop_pair)
-    for scenario in scenarios:
-        data_file = f"data/demographic_inference/{pop_pair}_{scenario}.fs"
-        data = dadi.Spectrum.from_file(data_file)
-        for mig in migs:
-            comp_type = get_comp_type(scenario, mig)
-            sim_file = f"data/introgression_scans/simulations_withM/{pop_pair}.{mig}.concatenated.msOut"
-            sim = dadi.Spectrum.from_ms_file(sim_file, average=True, mask_corners=True)
-            sim = sim.fold()
-            plot_comparison(data, sim, pop_pair, scenario, mig, comp_type)
-            ll = compute_log_likelihood(data, sim)
-            record = create_record(pop_pair, scenario, mig, comp_type, ll)
-            Data.append(record)
-
-df = pd.DataFrame(Data)
-df.to_csv("plots/revision1/compare_sfs/sfs_comparison_log_likelihoods.csv", index=False)
+#Data = []
+#pop_pairs = ['lpa-wel', 'lpa-sel']
+#migs = ['none', 'ab', 'ba']
+#
+#for pop_pair in pop_pairs:
+#    scenarios = get_scenarios(pop_pair)
+#    for scenario in scenarios:
+#        data_file = f"data/demographic_inference/{pop_pair}_{scenario}.fs"
+#        data = dadi.Spectrum.from_file(data_file)
+#        for mig in migs:
+#            comp_type = get_comp_type(scenario, mig)
+#            sim_file = f"data/introgression_scans/simulations_withM/{pop_pair}.{mig}.concatenated.msOut"
+#            sim = dadi.Spectrum.from_ms_file(sim_file, average=True, mask_corners=True)
+#            sim = sim.fold()
+#            # plot_comparison(data, sim, pop_pair, scenario, mig, comp_type)
+#            ll = compute_log_likelihood(data, sim)
+#            record = create_record(pop_pair, scenario, mig, comp_type, ll)
+#            Data.append(record)
+#
+#df = pd.DataFrame(Data)
+#df.to_csv("plots/revision1/compare_sfs/sfs_comparison_log_likelihoods.csv", index=False)
+df = pd.read_csv("plots/revision1/compare_sfs/sfs_comparison_log_likelihoods.csv")
 # boxplot of log-likelihoods by comparison type
-plt.figure()
-df.boxplot(column='log_likelihood', by='comparison_type')
-plt.title('Log-Likelihoods by Comparison Type')
-plt.suptitle('')
-plt.xlabel('Comparison Type')
-plt.ylabel('Log-Likelihood')
+fig, ax = plt.subplots(figsize=(10, 5))
+#df.boxplot(column='log_likelihood', by='comparison_type', grid=False, showfliers=True, widths=0.5, boxprops=dict(linewidth=1), medianprops=dict(linewidth=1))
+boxprops = dict(linestyle='-', linewidth=1, color='black')
+medianprops = dict(linestyle='-', linewidth=1, color='red')
+bp = ax.boxplot([df[df['comparison_type'] == 'same direction']['log_likelihood'].values,
+                  df[df['comparison_type'] == 'different direction']['log_likelihood'].values],
+                 labels=['Same Scenario', 'Different Scenario'],
+                 boxprops=boxprops, medianprops=medianprops, patch_artist=False,
+                 showfliers=True, widths=0.5)
+ax.set_title('Observed Data vs Simulations\n')
+ax.set_xlabel('Introgression Scenario')
+ax.set_ylabel('Log-Likelihood')
+plt.tight_layout()
 plt.savefig("plots/revision1/compare_sfs/log_likelihoods_boxplot.pdf")
 plt.close()

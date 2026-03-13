@@ -100,4 +100,5 @@ src/introgression_scans/plot_obs_v_rand_windows_old.py
 *.npz
 *.weights
 *.vcf
+*.gz
 *.hdf5

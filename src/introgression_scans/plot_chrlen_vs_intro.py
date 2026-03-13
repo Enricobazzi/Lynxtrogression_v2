@@ -3,6 +3,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import scipy.stats as stats
 
 plt.rcParams.update({'font.size': 9})
 
@@ -37,13 +38,23 @@ df["chrom_length"] = df["chrom_length"].astype(float)
 df["introgression"] = df["introgression"].astype(str)
 df["chrom"] = df["chrom"].astype(str)
 
-# calculate correlation coefficients
-corrs = df.groupby("introgression").apply(lambda x: x["chrom_length"].corr(x["introgression_pc"]))
-# add a long name to the introgressions in corrs
+# calculate correlation coefficients 
+# corrs = df.groupby("introgression").apply(lambda x: x["chrom_length"].corr(x["introgression_pc"]))
+# calculate correlation coefficients using pearson method
+corrs = df.groupby("introgression").apply(
+    lambda x: stats.pearsonr(x["chrom_length"], x["introgression_pc"])[0]
+)
+# calculate p-values of the correlations
+pvals = df.groupby("introgression").apply(
+    lambda x:
+    stats.pearsonr(x["chrom_length"], x["introgression_pc"])[1]
+)
+# add a long name to the introgressions in corrs
 corrs.index = ["Southern Eurasian lynx", "Western Eurasian lynx", "Iberian lynx"]
 print(corrs)
-
-fig, ax = plt.subplots(figsize=(4, 4.8))
+pvals.index = ["Southern Eurasian lynx", "Western Eurasian lynx", "Iberian lynx"]
+print(pvals)
+fig, ax = plt.subplots(figsize=(5, 7))
 sns.scatterplot(data=df, x="chrom_length", y="introgression_pc", hue="introgression", ax=ax)
 # add tendency line for each introgression
 for intro in df["introgression"].unique():
@@ -53,9 +64,9 @@ for intro in df["introgression"].unique():
 # the legend shows the correlation coefficient next to the name of each introgression
 handles, labels = ax.get_legend_handles_labels()
 labels = [
-    f'Iberian lynx = {str(round(corrs["Iberian lynx"], 2))}',
-    f'Western Eurasian lynx = {str(round(corrs["Western Eurasian lynx"], 2))}',
-    f'Southern Eurasian lynx = {str(round(corrs["Southern Eurasian lynx"], 2))}',
+    f'Iberian lynx = {str(round(corrs["Iberian lynx"], 2))} (p={str(round(pvals["Iberian lynx"], 4))})',
+    f'Western Eurasian lynx = {str(round(corrs["Western Eurasian lynx"], 2))} (p={str(round(pvals["Western Eurasian lynx"], 4))})',
+    f'Southern Eurasian lynx = {str(round(corrs["Southern Eurasian lynx"], 2))} (p={str(round(pvals["Southern Eurasian lynx"], 4))})',
 ]
 
 ax.legend(handles, labels, title="Correlation (r)", loc="upper right")
